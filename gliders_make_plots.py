@@ -1135,7 +1135,7 @@ def make_section_plots(outputpath, transect_id, transect_label, dep_plotinfo,
     #######################
     # plot depth profiles #
     #######################
-    print('      Plotting depth-longitude transects')
+    print('      ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' - Plotting depth-longitude transects for section '+section_id+'...')
     for key2 in plotVars.keys():
         var = plotVars[key2]['data']
         varmin = plotVars[key2]['limits'][0]
@@ -1309,8 +1309,13 @@ def make_section_plots(outputpath, transect_id, transect_label, dep_plotinfo,
         
 
         # save plot into the "scientific" units folders
-        figpath = os.path.join(outputpath, transect_id, dep_plotinfo['id'],
-                               section_id, 'scientific', key2)
+        figdir = os.path.join(outputpath, transect_id, dep_plotinfo['id'],
+                               section_id, 'scientific')
+        try:
+            os.makedirs(figdir, exist_ok=True)
+        except Exception:
+            pass
+        figpath = os.path.join(figdir, key2)
         plt.savefig(figpath)
         
         fig.clf()
@@ -1319,13 +1324,13 @@ def make_section_plots(outputpath, transect_id, transect_label, dep_plotinfo,
         
     return
 
-def make_section_data_json(outputpath, transect_id, dep_plotinfo, 
-                           datadict, data_coords, data_vars, depth_step=5):
+def make_section_data_json(outputpath, transect_id, dep_plotinfo,
+                           datadict, data_coords, varid, section_ind, depth_step=10):
     
     # Extract the data for the section
-    datavar = np.array(datadict[varname])
-    section_start = data_coords['endpts'][ind]
-    section_end = data_coords['endpts'][ind+1]
+    datavar = np.array(datadict[varid])
+    section_start = data_coords['endpts'][section_ind]
+    section_end = data_coords['endpts'][section_ind+1]
     xvar = data_coords['plon'][section_start:section_end+1]
     yvar = data_coords['plat'][section_start:section_end+1]
     zvar = data_coords['depth'][section_start:section_end+1]
@@ -1335,7 +1340,12 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
 
     # Remove any NaN values from the data
     if any(np.isnan(datavar)):
-        valid_inds = np.where(~np.isnan(datavar))[0]
+        valid_inds = np.where(np.logical_and(~np.isnan(datavar),
+                                             ~np.isnan(zvar)))[0]
+        if len(valid_inds) == 0:
+            print('      No valid data for variable ' + varid + ' in section ' +
+                  data_coords['section_id'][section_ind] + '; skipping JSON creation.')
+            return
         xvar = xvar[valid_inds]
         yvar = yvar[valid_inds]
         zvar = zvar[valid_inds]
@@ -1345,7 +1355,15 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         divenums = divenums[valid_inds]
 
     # Build the section data dictionary
+    section_id = data_coords['section_id'][section_ind]
+
+    # Begin to build the section data json dictionary,
+    # with the data and bathymetry to be added later
     section_data = {
+        "transect_id": transect_id,
+        "deployment_id": dep_plotinfo['id'],
+        "section_id": section_id,
+        "variable_id": varid,
         "properties": {
             "depth": {"min": 0, "max": np.ceil(np.nanmax(zvar))},
             "value": {"min": np.floor(10*np.nanmin(datavar))/10, "max": np.ceil(10*np.nanmax(datavar))/10},
@@ -1361,6 +1379,16 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     # Step through each dive, and get the nearest depth values
     unique_dives = np.unique(divenums)
     ref_time = datetime.datetime(1970,1,1)
+
+    # Check that the starting time for each unique dive is in chronological order
+    dive_start_times = []
+    for dd in range(0,len(unique_dives)):
+        dive = unique_dives[dd]
+        dive_inds = np.where(divenums == dive)[0]
+        dive_start_times.append(datetime.datetime.strptime(section_time[dive_inds[0]],'%Y-%m-%dT%H:%M:%SZ'))
+    sorted_inds = np.argsort(dive_start_times)
+    unique_dives = unique_dives[sorted_inds]
+
     for dd in range(0,len(unique_dives)):
         dive = unique_dives[dd]
         dive_inds = np.where(divenums == dive)[0]
@@ -1368,12 +1396,21 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         section_data["bathymetry"].append({
             "lat": np.round(yvar[dive_inds[0]],6),
             "lon": np.round(xvar[dive_inds[0]],6),
-            'depth': np.round(bathyvar[dive_inds[0]],2)
+            'depth': np.round(bathyvar[dive_inds[0]],2)          
             }
         )
         
-        target_depths = np.arange(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
-                                    np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step, depth_step)
+        
+        try:
+            target_depths = np.arange(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
+                                      np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step, depth_step)
+        except:
+            print(zvar[dive_inds])
+            print(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
+                np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step)
+            print('Error occurred!')
+            stop
+
         nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
         nearest_depths = zvar[dive_inds][nearest_indices]
         nearest_values = datavar[dive_inds][nearest_indices]
@@ -1384,6 +1421,7 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             "lat": np.round(yvar[dive_inds[0]],6),
             "lon": np.round(xvar[dive_inds[0]],6),
             "timestamp": int((datetime.datetime.strptime(section_time[dive_inds[0]],'%Y-%m-%dT%H:%M:%SZ')-ref_time).total_seconds()),
+            "dive_number": int(dive),
             "values": []
         }
         for point in range(0,len(nearest_depths)):
@@ -1395,14 +1433,21 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         
 
     # Save the section data json
-    with open(f"{outputpath}/sectionA_data.json", 'w') as outfile:
+    json_dir = os.path.join(outputpath, transect_id, dep_plotinfo['id'],
+                            section_id, 'scientific_data')
+    try:
+        os.makedirs(json_dir, exist_ok=True)
+    except Exception:
+        pass
+    jsonpath = os.path.join(json_dir, f"{varid}_data.json")
+    with open(jsonpath, 'w') as outfile:
         json.dump(section_data, outfile)
 
 
 # In[ ]:
 
 
-def make_plots_for_transect(transect_id):
+def make_plots_for_transect(transect_id, deployment_id=None):
     
     # run init_params.py to define all required parameters when new deployment added
     # load init_params.json file
@@ -1413,21 +1458,40 @@ def make_plots_for_transect(transect_id):
     
     [glider_info, gliderplot_info] = gliders_gen.load_glider_info_all(transect_id)
     
-    
+    successFlag = True
     
     ###############################
     make_plots_flag = True
     update_jsons_flag = True
 
     # load the data, id the glider sections, and make the plots
-    for dep_ind in range(0,len(glider_info['deployments'])):
+    if deployment_id is not None:
+        if deployment_id.lower() == 'all':
+            dep_inds = range(0,len(glider_info['deployments']))
+            for dep_ind in dep_inds:
+                glider_info['deployments'][dep_ind]['plotting_active'] = True
+        else:
+            dep_inds = [ii for ii in range(0,len(glider_info['deployments'])) 
+                        if glider_info['deployments'][ii]['id'] == deployment_id]
+            if len(dep_inds) == 0:
+                print('   NOTE: Deployment ID "' + deployment_id + '" not found for transect ' + transect_id)
+                return
+    else:
+        dep_inds = range(0,len(glider_info['deployments']))
+
+
+    ###################################
+    # Step through the indices for each deployment,
+    # and attempt to make the plots
+    ###################################
+    for dep_ind in dep_inds:
         deployment = glider_info['deployments'][dep_ind].copy()
 
         matchind = np.where([ii['id'] == deployment['id'] 
                              for ii in gliderplot_info['deployments']])[0][0]
         deployment_plotinfo = gliderplot_info['deployments'][matchind]
 
-        if deployment['plotting_active']:
+        if (deployment['plotting_active']) or (deployment_id is not None):
             
             print('\n' + datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S') + 
                   ' - Working on dataset ' + deployment['dataset_id'] + 
@@ -1508,7 +1572,7 @@ def make_plots_for_transect(transect_id):
                 make_jsons_flag = True
                 
             # Make the transect path plot
-            print('   Begin making transect path plot: ' + datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S'))
+            print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '   Begin making transect path plot' )
             make_output_folders(outputpath, transect_id, deployment_plotinfo['id'], data_coords['section_id'])
             make_transect_path_plot(outputpath, transect_id, 
                                     deployment_plotinfo, data_coords)
@@ -1522,7 +1586,7 @@ def make_plots_for_transect(transect_id):
             
             
             if make_plots_flag:
-                print('   Begin making section plots: ' + datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S'))
+                print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '   Begin making section plots')
                 
                 
                 # Make a copy of the existing folders to use as a backup
@@ -1578,6 +1642,15 @@ def make_plots_for_transect(transect_id):
                                            deployment_plotinfo, metadata, datadict, data_coords, 
                                            startind, endind, data_coords['section_id'][ii], 
                                            data_coords['orientation'][ii])
+                        # Create section data JSON for each variable in the deployment plotinfo
+                        for varid in deployment_plotinfo.get('variables_id', []):
+                            try:
+                                make_section_data_json(outputpath, transect_id, deployment_plotinfo,
+                                                       datadict, data_coords, varid, ii)
+                            except Exception as e:
+                                print(f'An error occurred while making section data json for section {ii} var {varid}')
+                                print(e)
+                                successFlag = False
                     except Exception as e:
                         
                         print('An error occurred while making section plots for section ' + str(ii))
@@ -1598,6 +1671,8 @@ def make_plots_for_transect(transect_id):
                             shutil.copytree(src, dst)
                             del src
                             del dst
+
+                        successFlag = False
                             
                     
                     del df
@@ -1672,7 +1747,7 @@ def make_plots_for_transect(transect_id):
         gliders_gen.save_glider_info_all(glider_info['transect']['id'], 
                                          glider_obj, gliderplot_obj)
         
-    return
+    return successFlag
 
 
 # def set_alldeployments_toplot():
@@ -1694,7 +1769,7 @@ def make_plots_for_transect(transect_id):
 def main():
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hu:t:", ["help", "transect"])
+        opts, args = getopt.getopt(sys.argv[1:], "hu:t:d:", ["help", "transect", "deployment"])
     except Exception as inst:
         # print help information and exit:
         print('Error in getting options: ' + str(inst)) # will print something like "option -a not recognized"
@@ -1704,6 +1779,7 @@ def main():
     # step through command-line options and their arguments
     processFlag = False
     transectFlag = False
+    deploymentFlag = False
     
     # For all the command-line arguments, update a flag to indicate if the option was given,
     # and extract the value of the command-line argument
@@ -1716,6 +1792,9 @@ def main():
         elif o in ("-t", "--transect"):
             transectFlag = True
             transectName = a
+        elif o in ("-d", "--deployment"):
+            deploymentFlag = True
+            deploymentName = a
         else:
             assert False, "unhandled option"
     
@@ -1750,13 +1829,20 @@ def main():
         print('No transect name is given. Try again with options: "-t *transect*"')
         list_valid_transects()
         sys.exit(2)
+
+
+    if deploymentFlag:
+        print('Process will be performed for deployment: ' + deploymentName)
+        print('Note that if the deployment is still active, plots will be made for the current data.')
+    else:
+        deploymentName = None
         
    
 
     #######################################
     # Make the plots for a defined transect
     try:
-        make_plots_for_transect(transectName)
+        successFlag = make_plots_for_transect(transectName, deploymentName)
         print(datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S') 
                   + ' - Processing for transect "' + transectName + '" complete.\n\n\n')
     except Exception as e:
@@ -1769,12 +1855,24 @@ def main():
         __, infodir, __ = gliders_gen.get_pathdirs()
         with open(os.path.join(infodir, 'user_info.json'), 'r') as infofile:
             user_info = json.load(infofile)
-        gliders_gen.send_error_email(msgtxt=error_msg, subj=error_sbj,
+        gliders_gen.send_emailreport(msgtxt=error_msg, subj=error_sbj,
+                                     fromaddr=user_info['email_fromaddr'], toaddr="setht1@uw.edu",
+                                     login=user_info['email_login'],
+                                     passwd=user_info['email_passwd'])
+        sys.exit(2)
+        
+    if not(successFlag):
+        error_msg = "An error occured while making plots for transect " + transectName + ".\n\n" + "Please check the log for details."
+        error_sbj = "NVS Gliders Plotting Error for Transect " + transectName
+        __, infodir, __ = gliders_gen.get_pathdirs()
+        with open(os.path.join(infodir, 'user_info.json'), 'r') as infofile:
+            user_info = json.load(infofile)
+        gliders_gen.send_emailreport(msgtxt=error_msg, subj=error_sbj,
                                      fromaddr=user_info['email_fromaddr'], toaddr="setht1@uw.edu",
                                      login=user_info['email_login'],
                                      passwd=user_info['email_passwd'])
         
-    sys.exit(2)
+    sys.exit(0)
 
 
 # In[ ]:

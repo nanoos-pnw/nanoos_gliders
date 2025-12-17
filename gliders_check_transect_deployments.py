@@ -459,6 +459,7 @@ def get_ooi_deploymentname(transect_id):
 def check_transect_deployments(transect_id):
     
     __, __, transect_basedir = gliders_gen.get_pathdirs()
+    successFlag = True
 
     #################################################
     # Ensure that all deployments are in the right order for the transect
@@ -762,7 +763,7 @@ def check_transect_deployments(transect_id):
     # Ensure that all deployments are in the right order for the transect
     #check_glider_deployment_order(transect_id)
     
-    return
+    return successFlag
 
 
 # In[ ]:
@@ -820,7 +821,7 @@ def main():
     ###################################################################
     ## Process the hex files for a given buoy designation
     try:
-        check_transect_deployments(transectId)
+        successFlag = check_transect_deployments(transectId)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         print('Error in processing:')
@@ -832,12 +833,27 @@ def main():
         __, infodir, __ = gliders_gen.get_pathdirs()
         with open(os.path.join(infodir, 'user_info.json'), 'r') as infofile:
             user_info = json.load(infofile)
-        gliders_gen.send_error_email(msgtxt=error_msg, subj=error_sbj,
+        gliders_gen.send_emailreport(msgtxt=error_msg, subj=error_sbj,
                                      fromaddr=user_info['email_fromaddr'], toaddr="setht1@uw.edu",
                                      login=user_info['email_login'],
                                      passwd=user_info['email_passwd'])
         
-    sys.exit(2)
+        sys.exit(2)
+
+    if not(successFlag):
+        error_msg = "An error occured while updating deployments for transect " + transectName + ".\n\nCheck the processing log for details."
+        error_sbj = "NVS Gliders Checking Deployment Error for Transect " + transectName
+        __, infodir, __ = gliders_gen.get_pathdirs()
+        with open(os.path.join(infodir, 'user_info.json'), 'r') as infofile:
+            user_info = json.load(infofile)
+        gliders_gen.send_emailreport(msgtxt=error_msg, subj=error_sbj,
+                                     fromaddr=user_info['email_fromaddr'], toaddr="setht1@uw.edu",
+                                     login=user_info['email_login'],
+                                     passwd=user_info['email_passwd'])
+        sys.exit(2)
+
+        
+    sys.exit(0)
 
 
 # In[ ]:

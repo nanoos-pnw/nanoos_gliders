@@ -110,8 +110,9 @@ def copyfile_func(src, dst):
         print("Permission denied.")
 
     # For other errors
-    except:
+    except Exception as e:
         print('Copy error for "' + src + '": Error occurred while copying file.')
+        print('Error message: ' + str(e))
 
 
 # In[ ]:
