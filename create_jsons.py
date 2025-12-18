@@ -37,7 +37,7 @@ class GliderJson:
     
     def __init__(self, transect_id=None, transect_label=None, active=None, display_map=True, provider_name=None, provider_url=None,
                  provider_contact_name=None, provider_contact_email=None, deployment_info_url_template=None,
-                 section_info_url_template=None, section_plots_url_template=None, json_obj=None):
+                 section_info_url_template=None, section_plots_url_template=None, section_data_url_template=None, json_obj=None):
         if json_obj is None:
             self.transect = {'id':transect_id, 'label':transect_label}
             self.active = active
@@ -47,6 +47,7 @@ class GliderJson:
             self.deployment_info_url_template = deployment_info_url_template
             self.section_info_url_template = section_info_url_template
             self.section_plots_url_template = section_plots_url_template
+            self.section_data_url_template = section_data_url_template
             self.deployments = []
         else:
             self.transect = json_obj['transect']
@@ -56,6 +57,7 @@ class GliderJson:
             self.deployment_info_url_template = json_obj['deployment_info_url_template']
             self.section_info_url_template = json_obj['section_info_url_template']
             self.section_plots_url_template = json_obj['section_plots_url_template']
+            self.section_data_url_template = json_obj['section_data_url_template']
             self.deployments = json_obj['deployments']
         
     def add_deployment(self, glider_id, dataset_id, deployment_id, deployment_label, 

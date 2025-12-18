@@ -295,6 +295,8 @@ def load_erddap_glider_metadata(transect_id, dataset_id):
                                  '/{deployment_id}/{section_id}/section_info.json')
     section_plots_url_template = ('https://data.nanoos.org/wd/gliders/' + transect_id + 
                                   '/{deployment_id}/{section_id}/scientific/{variable_id}.png')
+    section_data_url_template = ('https://data.nanoos.org/wd/gliders/' + transect_id + 
+                                '/{deployment_id}/{section_id}/scientific_data/{variable_id}_data.json')
     glider_label = info[(info['Variable Name'].str.match('NC_GLOBAL') & 
                          info['Attribute Name'].str.match('platform_type'))]['Value'].values[0]
     if 'Slocum' in glider_label:
@@ -316,6 +318,7 @@ def load_erddap_glider_metadata(transect_id, dataset_id):
                 'deployment_info_url_template': deployment_info_url_template,
                 'section_info_url_template': section_info_url_template,
                 'section_plots_url_template': section_plots_url_template,
+                'section_data_url_template': section_data_url_template,
                 'glider_label': glider_label,
                 'glider_type': glider_type,
                 'data_label': data_label,
@@ -1010,7 +1013,8 @@ def save_dataset_as_glider_info_jsons(outputpath, dataset, metadata):
                                 provider_contact_email=metadata['provider_contact_email'], 
                                 deployment_info_url_template=metadata['deployment_info_url_template'],
                                 section_info_url_template=metadata['section_info_url_template'], 
-                                section_plots_url_template=metadata['section_plots_url_template'])
+                                section_plots_url_template=metadata['section_plots_url_template'],
+                                section_data_url_template=metadata['section_data_url_template'])
 
         with open(info_json, "w") as write_file:
             json.dump(glider_obj.__dict__, write_file) 
