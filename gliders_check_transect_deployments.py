@@ -828,8 +828,8 @@ def main():
         print(e)
         print('Error occurs on line ' + str(exc_tb.tb_lineno))
 
-        error_msg = "An error occured while updating deployments for transect " + transectName + ".\n\n" + "Error message:\n" + str(e)
-        error_sbj = "NVS Gliders Checking Deployment Error for Transect " + transectName
+        error_msg = "An error occured while updating deployments for transect " + transectId + ".\n\n" + "Error message:\n" + str(e)
+        error_sbj = "NVS Gliders Checking Deployment Error for Transect " + transectId
         __, infodir, __ = gliders_gen.get_pathdirs()
         with open(os.path.join(infodir, 'user_info.json'), 'r') as infofile:
             user_info = json.load(infofile)

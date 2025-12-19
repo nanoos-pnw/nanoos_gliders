@@ -1365,11 +1365,11 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         "section_id": section_id,
         "variable_id": varid,
         "properties": {
-            "depth": {"min": 0, "max": np.ceil(np.nanmax(zvar))},
+            "depth": {"top": 0, "bottom": np.ceil(np.nanmax(zvar))},
             "value": {"min": np.floor(10*np.nanmin(datavar))/10, "max": np.ceil(10*np.nanmax(datavar))/10},
             "transect": [
-                {"lat": np.floor(100*np.nanmin(yvar))/100, "lon": np.floor(100*np.nanmin(xvar))/100},
-                {"lat": np.ceil(100*np.nanmax(yvar))/100, "lon": np.ceil(100*np.nanmax(xvar))/100}
+                {"lat": np.floor(1e6*np.nanmin(yvar))/1e6, "lon": np.floor(1e6*np.nanmin(xvar))/1e6},
+                {"lat": np.ceil(1e6*np.nanmax(yvar))/1e6, "lon": np.ceil(1e6*np.nanmax(xvar))/1e6}
             ]
         },
         "data": [],
@@ -1399,23 +1399,7 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             'depth': np.round(bathyvar[dive_inds[0]],2)          
             }
         )
-        
-        
-        try:
-            target_depths = np.arange(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
-                                      np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step, depth_step)
-        except:
-            print(zvar[dive_inds])
-            print(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
-                np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step)
-            print('Error occurred!')
-            stop
 
-        nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
-        nearest_depths = zvar[dive_inds][nearest_indices]
-        nearest_values = datavar[dive_inds][nearest_indices]
-        if len(nearest_indices) == 0:
-            continue
 
         newdive = {
             "lat": np.round(yvar[dive_inds[0]],6),
@@ -1424,6 +1408,12 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             "dive_number": int(dive),
             "values": []
         }
+                
+        nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
+        nearest_depths = zvar[dive_inds][nearest_indices]
+        nearest_values = datavar[dive_inds][nearest_indices]
+        if len(nearest_indices) == 0:
+            continue
         for point in range(0,len(nearest_depths)):
             newdive["values"].append({
                 "depth": np.round(nearest_depths[point],2),
@@ -1689,7 +1679,8 @@ def make_plots_for_transect(transect_id, deployment_id=None):
                 if len(existing_folders) > len(data_coords['segments']):
                     for folder in existing_folders:
                         if not(any([folder == ii for ii in data_coords['section_id']])):
-                            shutil.rmtree(os.path.join(deployment_folder, folder))                            
+                            if os.path.exists(os.path.join(deployment_folder, folder)):
+                                shutil.rmtree(os.path.join(deployment_folder, folder))                            
 
 
             ####################################################
