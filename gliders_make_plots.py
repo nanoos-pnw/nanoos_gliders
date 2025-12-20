@@ -1337,6 +1337,7 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     section_time = data_coords['atime'][section_start:section_end+1]
     bathyvar = data_coords['gliderdepths'][section_start:section_end+1]
     divenums = data_coords['divenum'][section_start:section_end+1]
+    orientation = data_coords['orientation'][section_ind]
 
     # Remove any NaN values from the data
     if any(np.isnan(datavar)):
@@ -1357,6 +1358,48 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     # Build the section data dictionary
     section_id = data_coords['section_id'][section_ind]
 
+    # Identify the unique dives for the section
+    unique_dives = np.unique(divenums)
+    ref_time = datetime.datetime(1970,1,1)
+    
+    sorting_spatial = True
+    if sorting_spatial:
+        # Sort the dives by their position along the transect
+
+        # If the dominant orientation of the section is along the longitude, sort
+        # by longitude; if along the latitude, sort by latitude
+        dive_pos = []
+        for dd in range(0,len(unique_dives)):
+            dive = unique_dives[dd]
+            dive_inds = np.where(divenums == dive)[0]
+            if orientation == 'longitudinal':
+                dive_pos.append(xvar[dive_inds[0]])
+            elif orientation == 'latitudinal':
+                dive_pos.append(yvar[dive_inds[0]])
+        sortinds = np.argsort(dive_pos)
+        unique_dives = unique_dives[sortinds]
+
+    else:
+        # Check that the starting time for each unique dive is in chronological order
+        dive_start_times = []
+        for dd in range(0,len(unique_dives)):
+            dive = unique_dives[dd]
+            dive_inds = np.where(divenums == dive)[0]
+            dive_start_times.append(datetime.datetime.strptime(section_time[dive_inds[0]],
+                                                            '%Y-%m-%dT%H:%M:%SZ'))
+        sorted_inds = np.argsort(dive_start_times)
+        unique_dives = unique_dives[sorted_inds]
+
+
+    # Extract the transect position for the first dive
+    first_divelon = np.round(xvar[np.where(divenums == unique_dives[0])[0][0]],6)
+    first_divelat = np.round(yvar[np.where(divenums == unique_dives[0])[0][0]],6)
+
+    # Extract the transect position for the last dive
+    last_divelon = np.round(xvar[np.where(divenums == unique_dives[-1])[0][0]],6)
+    last_divelat = np.round(yvar[np.where(divenums == unique_dives[-1])[0][0]],6)
+
+
     # Begin to build the section data json dictionary,
     # with the data and bathymetry to be added later
     section_data = {
@@ -1368,26 +1411,13 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             "depth": {"top": 0, "bottom": np.ceil(np.nanmax(zvar))},
             "value": {"min": np.floor(10*np.nanmin(datavar))/10, "max": np.ceil(10*np.nanmax(datavar))/10},
             "transect": [
-                {"lat": np.floor(1e6*np.nanmin(yvar))/1e6, "lon": np.floor(1e6*np.nanmin(xvar))/1e6},
-                {"lat": np.ceil(1e6*np.nanmax(yvar))/1e6, "lon": np.ceil(1e6*np.nanmax(xvar))/1e6}
+                {"lat": first_divelat, "lon": first_divelon},
+                {"lat": last_divelat, "lon": last_divelon}
             ]
         },
         "data": [],
         "bathymetry": []
     }
-
-    # Step through each dive, and get the nearest depth values
-    unique_dives = np.unique(divenums)
-    ref_time = datetime.datetime(1970,1,1)
-
-    # Check that the starting time for each unique dive is in chronological order
-    dive_start_times = []
-    for dd in range(0,len(unique_dives)):
-        dive = unique_dives[dd]
-        dive_inds = np.where(divenums == dive)[0]
-        dive_start_times.append(datetime.datetime.strptime(section_time[dive_inds[0]],'%Y-%m-%dT%H:%M:%SZ'))
-    sorted_inds = np.argsort(dive_start_times)
-    unique_dives = unique_dives[sorted_inds]
 
     for dd in range(0,len(unique_dives)):
         dive = unique_dives[dd]
@@ -1396,11 +1426,11 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         section_data["bathymetry"].append({
             "lat": np.round(yvar[dive_inds[0]],6),
             "lon": np.round(xvar[dive_inds[0]],6),
-            'depth': np.round(bathyvar[dive_inds[0]],2)          
+            'depth': -np.round(bathyvar[dive_inds[0]],2)          
             }
         )
 
-
+        # Initialize the new dive dictionary for the current dive
         newdive = {
             "lat": np.round(yvar[dive_inds[0]],6),
             "lon": np.round(xvar[dive_inds[0]],6),
@@ -1408,12 +1438,19 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             "dive_number": int(dive),
             "values": []
         }
+
+        # Define the data target depths in the current dive
+        target_depths = np.arange(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
+                                  np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step, depth_step)
                 
+        # Get the depths and values nearest to each target depth
         nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
         nearest_depths = zvar[dive_inds][nearest_indices]
         nearest_values = datavar[dive_inds][nearest_indices]
         if len(nearest_indices) == 0:
             continue
+
+        # Step through each point in the dive, and add the depth and value to the json
         for point in range(0,len(nearest_depths)):
             newdive["values"].append({
                 "depth": np.round(nearest_depths[point],2),
