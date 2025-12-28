@@ -297,7 +297,7 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
     if len(keep_endpts) > 0:
         endpts = keep_endpts
     else:
-        endpts = [0, len(data_coords['plon'])]
+        endpts = []
     
     
     ################################
@@ -432,6 +432,10 @@ def get_segments_by_rdp(data_coords, dep_plotinfo, dist_tol=0.05, angle_tol=60):
                                               plat < np.min(dep_plotinfo['latlimmap'])),
                                 np.logical_or(plon > np.max(dep_plotinfo['lonlimmap']),
                                               plon < np.min(dep_plotinfo['lonlimmap'])))
+    if all(badloc_inds):
+        print('   No points found in the lat/lon region')
+        return []
+    
     plat[badloc_inds] = np.nan
     plon[badloc_inds] = np.nan
     
@@ -542,6 +546,9 @@ def check_short_segments(plon, plat, ptime, segments_orig, iteration=0):
     dists = gliders_gen.great_circle_calc(plon, plat)
     
     nsegments = len(segments)
+    if nsegments <= 0:
+        print('   No segments found')
+        return []
     seg_lengths = np.diff(ptime[segments])
     seg_dists = gliders_gen.great_circle_calc(plon[segments], plat[segments])
     cumdists = np.array([np.nansum(dists[segments[ii]:segments[ii+1]]) 
