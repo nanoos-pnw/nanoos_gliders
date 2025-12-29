@@ -1346,12 +1346,18 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     divenums = data_coords['divenum'][section_start:section_end+1]
     orientation = data_coords['orientation'][section_ind]
 
+    if len(datavar) == 0:
+        print('\t\tNo data present for variable ' + varid + ' in section ' +
+                  data_coords['section_id'][section_ind] + '; skipping JSON creation.')
+        return
+        #datavar = np.nan*np.zeros(len(xvar))
+    
     # Remove any NaN values from the data
     if any(np.isnan(datavar)):
         valid_inds = np.where(np.logical_and(~np.isnan(datavar),
                                              ~np.isnan(zvar)))[0]
         if len(valid_inds) == 0:
-            print('      No valid data for variable ' + varid + ' in section ' +
+            print('\t\tNo valid data for variable ' + varid + ' in section ' +
                   data_coords['section_id'][section_ind] + '; skipping JSON creation.')
             return
         xvar = xvar[valid_inds]
@@ -1406,6 +1412,14 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     last_divelon = np.round(xvar[np.where(divenums == unique_dives[-1])[0][0]],6)
     last_divelat = np.round(yvar[np.where(divenums == unique_dives[-1])[0][0]],6)
 
+    # Variable min/max values
+    if len(datavar) > 0 and sum(np.logical_not(np.isnan(datavar))) > 0:
+        varmin = np.floor(10*np.nanmin(datavar))/10
+        varmax = np.ceil(10*np.nanmax(datavar))/10
+    else:
+        varmin = np.nan
+        varmax = np.nan
+
 
     # Begin to build the section data json dictionary,
     # with the data and bathymetry to be added later
@@ -1416,7 +1430,7 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         "variable_id": varid,
         "properties": {
             "depth": {"top": 0, "bottom": np.ceil(np.nanmax(zvar))},
-            "value": {"min": np.floor(10*np.nanmin(datavar))/10, "max": np.ceil(10*np.nanmax(datavar))/10},
+            "value": {"min": varmin, "max": varmax},
             "transect": [
                 {"lat": first_divelat, "lon": first_divelon},
                 {"lat": last_divelat, "lon": last_divelon}
