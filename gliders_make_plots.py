@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+# %%
 
-# In[ ]:
+# %%
 
 
 # load packages
@@ -39,19 +40,38 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[ ]:
+# %%
 
 
 def make_oxy_colormap(vmin, vmax):
     
+    # Define the number of colors to use
     ncolors = 256
+
+    # Define the number of steps to use for just
+    # the hypoxic colormap; which is
+    # # also the start of the white color
     white_start = int(np.ceil((2/(vmax-vmin)) * ncolors))
 
+    # Get the "rainbow" colormap
     colormap = matplotlib.colormaps['rainbow']
 
+    # Use the upper 3/4 of the colormap, and split it into
+    # a number of colors equal to the % of the variable range
+    # above 2 mg/L
     colormap_colors = colormap(np.linspace(0.25,1,int(((vmax-2)/(vmax-vmin))*ncolors)))
 
+    # To make the hypoxic range, we go range from a purple color to a 
+    # white color, in a number of steps equal to the fraction of the total steps
+    # which accounts for the 2mg/L threshold as a % of the colorbar range
+    # (i.e., if the total range is from 0-8mg/L, the 2mg/L threshold is 25% of 
+    #  the total range)
     hypoxic_range = np.ones((white_start,4))
+    
+    # The colormap for the selected purple color is (0.18, 0, 0.64)
+    # The colormap for white is (1, 1, 1)
+    # The hypoxic range is a linear interpolation of each color 
+    # value range, over the number of steps determined above
     newrange = np.arange(0.18,1,(1-0.18)/white_start)
     if len(newrange) > white_start:
         hypoxic_range[:,0] = newrange[:-1]
@@ -70,6 +90,7 @@ def make_oxy_colormap(vmin, vmax):
     else:
         hypoxic_range[:,2] = newrange
 
+    #
     if vmax - vmax < 10:
         colormap_start = 6
     else:
@@ -85,15 +106,17 @@ def make_oxy_colormap(vmin, vmax):
         colormap_colors[0:colormap_start,2] = np.arange(1, colormap_colors[colormap_start-1,2], 
                                                    -(1-colormap_colors[colormap_start-1,2])/colormap_start)
 
+    # Append the modified rainbox colormap and the built hypoxic colormap together
     colormap_colors = np.append(hypoxic_range, colormap_colors,axis=0)
 
+    # Create a new listed colormap for the new oxygen colormap
     colormap1 = colormap.copy()
     colormap1 = matplotlib.colors.ListedColormap(colormap_colors)
     
     return colormap1
 
 
-# In[ ]:
+# %%
 
 
 def extract_position_variables(df, dep_plotinfo):
@@ -148,7 +171,7 @@ def extract_position_variables(df, dep_plotinfo):
     return data_coords
 
 
-# In[ ]:
+# %%
 
 
 def extract_data_variables(df, dep_plotinfo):
@@ -178,7 +201,7 @@ def extract_data_variables(df, dep_plotinfo):
     return datadict
 
 
-# In[ ]:
+# %%
 
 
 def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
@@ -230,7 +253,7 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
         else:
             last_goodpt = len(data_coords['plon'])-1
         endpts = np.append(segments, last_goodpt).astype(int)
-        endpts = np.sort(endpts)
+        endpts = np.sort(endpts).astype(int)
         
     elif bearing_method:
         # Using the vessel bearing        
@@ -238,11 +261,11 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
          plon_smooth, plat_smooth] = calculate_glider_bearing(plat, plon, ptime)
         segments = get_segments_from_bearing(bearing_smooth, bearing_smooth_wrapped, 
                                              ptime, plon, plat)
-        endpts = np.append(segments, len(bearing_raw)-1)
+        endpts = np.append(segments, len(bearing_raw)-1).astype(int)
         
         # Convert the "endpts" to indices corresponding to the
         # last point in each dive
-        endpts = divenum_lastind[endpts]
+        endpts = divenum_lastind[endpts].astype(int)
     else:
         # Determine turning points along the path
         # By finding the longitude min/max
@@ -252,7 +275,7 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
         
         # Convert the "endpts" to indices corresponding to the
         # last point in each dive
-        endpts = divenum_lastind[endpts]
+        endpts = divenum_lastind[endpts].astype(int)
         
         
     ############################################
@@ -279,7 +302,7 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
             new_endpts = endpts[endpts_newstart+1:]
         else:
             new_endpts = []
-        endpts = np.unique(np.append(prev_endpts, new_endpts))
+        endpts = np.unique(np.append(prev_endpts, new_endpts)).astype(int)
         
     
     #########################################
@@ -295,16 +318,16 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
                                            data_coords['plon'][endpt] < np.min(dep_plotinfo['lonlimmap'])))):
                keep_endpts.append(endpt)
     if len(keep_endpts) > 0:
-        endpts = keep_endpts
+        endpts = np.array(keep_endpts).astype(int)
     else:
-        endpts = []
+        endpts = np.array([]).astype(int)
     
     
     ################################
     # Assign section endpts, and build
     # remaining data coordinates
         
-    data_coords['endpts'] = endpts
+    data_coords['endpts'] = endpts.astype(int)
 
     # save pairs of endpoints for each segment
     segments = list()
@@ -337,7 +360,7 @@ def calc_turning_points(data_coords, dep_plotinfo, prev_coords=None):
     return data_coords
 
 
-# In[ ]:
+# %%
 
 
 def load_turning_points(outputpath, transect_id, deployment_id,
@@ -378,12 +401,12 @@ def load_turning_points(outputpath, transect_id, deployment_id,
 
     section_segments = [(section_startinds[ii], section_endinds[ii]) 
                         for ii in range(0,len(section_startinds))]
-    section_endpts = np.unique(np.append(section_startinds, section_endinds))
+    section_endpts = np.unique(np.append(section_startinds, section_endinds)).astype(int)
     
     
     
     # Assign the data coordinates
-    data_coords['endpts'] = section_endpts
+    data_coords['endpts'] = section_endpts.astype(int)
     data_coords['segments'] = section_segments
     data_coords['section_id'] = section_ids
     data_coords['section_label'] = section_labels
@@ -394,7 +417,7 @@ def load_turning_points(outputpath, transect_id, deployment_id,
     return data_coords
 
 
-# In[ ]:
+# %%
 
 
 def great_circle_calc(lat, lon):
@@ -414,7 +437,7 @@ def great_circle_calc(lat, lon):
     return dist
 
 
-# In[ ]:
+# %%
 
 
 def get_segments_by_rdp(data_coords, dep_plotinfo, dist_tol=0.05, angle_tol=60):
@@ -512,7 +535,7 @@ def get_segments_by_rdp(data_coords, dep_plotinfo, dist_tol=0.05, angle_tol=60):
     # Additionally, the turns are found where the change in 
     # the bearing exceeds a threshold, but bearing is 
     # found by a change in vessel coordinate. 
-    segments = np.unique(np.append(0, turninds))
+    segments = np.unique(np.append(0, turninds)).astype(int)
     
     # Next, check the that there are no "short" segments,
     # and if so, to delete them out
@@ -531,18 +554,18 @@ def get_segments_by_rdp(data_coords, dep_plotinfo, dist_tol=0.05, angle_tol=60):
         segments = np.array([0])
         
     # Lastly, change the sigment index to make the dive index
-    segments = np.unique(np.array([rdp_diveinds[ii] for ii in segments]))
+    segments = np.unique(np.array([rdp_diveinds[ii] for ii in segments])).astype(int)
     
     return segments
 
 
-# In[ ]:
+# %%
 
 
 def check_short_segments(plon, plat, ptime, segments_orig, iteration=0):
     
-    segments = segments_orig.copy()
-    segments = np.append(segments, len(plon)-1)
+    segments = segments_orig.copy().astype(int)
+    segments = np.append(segments, len(plon)-1).astype(int)
     dists = gliders_gen.great_circle_calc(plon, plat)
     
     nsegments = len(segments)
@@ -551,7 +574,7 @@ def check_short_segments(plon, plat, ptime, segments_orig, iteration=0):
         return []
     seg_lengths = np.diff(ptime[segments])
     seg_dists = gliders_gen.great_circle_calc(plon[segments], plat[segments])
-    cumdists = np.array([np.nansum(dists[segments[ii]:segments[ii+1]]) 
+    cumdists = np.array([np.nansum(dists[int(segments[ii]):int(segments[ii+1])]) 
                          for ii in range(0,len(segments)-1)])
         
     
@@ -564,7 +587,7 @@ def check_short_segments(plon, plat, ptime, segments_orig, iteration=0):
         short_segs = np.where(np.logical_or(seg_lengths < datetime.timedelta(minutes=30),
                                             cumdists < min_segdist))[0]
         if len(short_segs) > 0:
-            segments = np.delete(segments, short_segs)
+            segments = np.delete(segments, short_segs).astype(int)
             seg_lengths = np.delete(seg_lengths, short_segs)
             seg_dists = np.delete(seg_dists, short_segs)
             cumdists = np.delete(cumdists, short_segs)
@@ -626,12 +649,12 @@ def check_short_segments(plon, plat, ptime, segments_orig, iteration=0):
                 goodinds[lastgood_ind+1:nextgood_ind] = [False for ii in range(lastgood_ind+1,nextgood_ind)]
                 
     # Remove the short segments
-    segments = np.delete(segments, [ii for ii in short_segs_to_remove])
+    segments = np.delete(segments, [ii for ii in short_segs_to_remove]).astype(int)
     
     return segments[:-1]
 
 
-# In[ ]:
+# %%
 
 
 def calculate_glider_bearing(lat, lon, datatime):
@@ -781,7 +804,7 @@ def calculate_glider_bearing(lat, lon, datatime):
     return thet_ang, thet_ang_smooth, thet_ang_smooth_wrapped, lon_smooth, lat_smooth
 
 
-# In[ ]:
+# %%
 
 
 def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat):
@@ -822,7 +845,7 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
         nsegments = len(segments)
         seg_lengths = np.diff(ptime[segments])
         seg_dists = gliders_gen.great_circle_calc(plon[segments], plat[segments])
-        cumdists = np.array([np.nansum(dists[segments[ii]:segments[ii+1]]) 
+        cumdists = np.array([np.nansum(dists[int(segments[ii]):int(segments[ii+1])]) 
                              for ii in range(0,len(segments)-1)])
         mean_bearing, _, _, _, _ = calculate_glider_bearing(plat[segments], plon[segments], ptime[segments])
         
@@ -832,7 +855,7 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
             short_segs = np.where(np.logical_or(seg_lengths < datetime.timedelta(minutes=30),
                                                 cumdists < min_segdist))[0]
             if len(short_segs) > 0:
-                segments = np.delete(segments, short_segs)
+                segments = np.delete(segments, short_segs).astype(int)
                 seg_lengths = np.delete(seg_lengths, short_segs)
                 seg_dists = np.delete(seg_dists, short_segs)
                 cumdists = np.delete(cumdists, short_segs)
@@ -859,7 +882,7 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
         mean_bearing = mean_bearing[:-1]
         std_bearing = []
         for ii in range(0,len(segments)-1):
-            std_bearing.append(np.nanstd(bearing_smooth[segments[ii]:segments[ii+1]]))
+            std_bearing.append(np.nanstd(bearing_smooth[int(segments[ii]):int(segments[ii+1])]))
         
 
         # Find the short segments
@@ -942,10 +965,10 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
         # Remove the short segments
         mean_bearing = np.delete(mean_bearing, short_segs_to_remove)
         std_bearing = np.delete(std_bearing, short_segs_to_remove)
-        segments = np.delete(segments, [ii for ii in short_segs_to_remove])
+        segments = np.delete(segments, [ii for ii in short_segs_to_remove]).astype(int)
         seg_lengths = np.diff(ptime[segments])
         seg_dists = gliders_gen.great_circle_calc(plon[segments], plat[segments])
-        cumdists = np.array([np.nansum(dists[segments[ii]:segments[ii+1]]) 
+        cumdists = np.array([np.nansum(dists[int(segments[ii]):int(segments[ii+1])]) 
                              for ii in range(0,len(segments)-1)])
         
         if len(short_segs_to_remove) == 0:
@@ -970,10 +993,10 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
                 short_segs.append(ii)
         mean_bearing = np.delete(mean_bearing, short_segs)
         std_bearing = np.delete(std_bearing, short_segs)
-        segments = np.delete(segments, [ii for ii in short_segs])
+        segments = np.delete(segments, [ii for ii in short_segs]).astype(int)
         seg_lengths = np.diff(ptime[segments])
         seg_dists = gliders_gen.great_circle_calc(plon[segments], plat[segments])
-        cumdists = np.array([np.nansum(dists[segments[ii]:segments[ii+1]]) 
+        cumdists = np.array([np.nansum(dists[int(segments[ii]):int(segments[ii+1])]) 
                              for ii in range(0,len(segments)-1)])
         
         
@@ -989,10 +1012,10 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
                 short_segs.append(ii)
         mean_bearing = np.delete(mean_bearing, short_segs)
         std_bearing = np.delete(std_bearing, short_segs)
-        segments = np.delete(segments, [ii for ii in short_segs])
+        segments = np.delete(segments, [ii for ii in short_segs]).astype(int)
         seg_lengths = np.diff(ptime[segments])
         seg_dists = gliders_gen.great_circle_calc(plon[segments], plat[segments])
-        cumdists = np.array([np.nansum(dists[segments[ii]:segments[ii+1]]) 
+        cumdists = np.array([np.nansum(dists[int(segments[ii]):int(segments[ii+1])]) 
                              for ii in range(0,len(segments)-1)])
         
         
@@ -1034,7 +1057,7 @@ def get_segments_from_bearing(bearing_smooth, bearing_wrapped, ptime, plon, plat
     return segments
 
 
-# In[ ]:
+# %%
 
 
 def make_output_folders(outputpath, transect_id, deploy_id, sections):
@@ -1059,7 +1082,7 @@ def make_output_folders(outputpath, transect_id, deploy_id, sections):
                 print ('Successfully created the directory %s ' % folder)
 
 
-# In[ ]:
+# %%
 
 
 def make_transect_path_plot(outputpath, transect_id, 
@@ -1121,7 +1144,7 @@ def make_transect_path_plot(outputpath, transect_id,
     return
 
 
-# In[ ]:
+# %%
 
 
 def make_section_plots(outputpath, transect_id, transect_label, dep_plotinfo, 
@@ -1354,8 +1377,10 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     
     # Remove any NaN values from the data
     if any(np.isnan(datavar)):
-        valid_inds = np.where(np.logical_and(~np.isnan(datavar),
-                                             ~np.isnan(zvar)))[0]
+        valid_inds = np.where(np.logical_and(np.logical_and(~np.isnan(datavar),
+                                                            ~np.isnan(zvar)),
+                                             np.logical_and(~np.isnan(xvar),
+                                                            ~np.isnan(yvar))))[0]
         if len(valid_inds) == 0:
             print('\t\tNo valid data for variable ' + varid + ' in section ' +
                   data_coords['section_id'][section_ind] + '; skipping JSON creation.')
@@ -1412,6 +1437,9 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     last_divelon = np.round(xvar[np.where(divenums == unique_dives[-1])[0][0]],6)
     last_divelat = np.round(yvar[np.where(divenums == unique_dives[-1])[0][0]],6)
 
+    # Get some limits, based on the deployment info
+    depthlims = dep_plotinfo['depthlimtransect']
+
     # Variable min/max values
     if len(datavar) > 0 and sum(np.logical_not(np.isnan(datavar))) > 0:
         varmin = np.floor(10*np.nanmin(datavar))/10
@@ -1419,6 +1447,16 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     else:
         varmin = np.nan
         varmax = np.nan
+
+    plotVars = {name: None for name in dep_plotinfo['variables_id']}
+    for iii, plotVarid in enumerate(plotVars.keys()):
+        plotVars[plotVarid] = {'data': datadict[plotVarid], 'limits': dep_plotinfo['variables_limits'][iii],
+            'label': dep_plotinfo['variables_label'][iii], 'units': dep_plotinfo['variables_units'][iii], 
+            'cmap': 'rainbow'}
+    plotVar = plotVars[varid]
+    plotVarmin = plotVar['limits'][0]
+    plotVarmax = plotVar['limits'][1]
+
 
 
     # Begin to build the section data json dictionary,
@@ -1429,8 +1467,9 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         "section_id": section_id,
         "variable_id": varid,
         "properties": {
-            "depth": {"top": 0, "bottom": np.ceil(np.nanmax(zvar))},
-            "value": {"min": varmin, "max": varmax},
+            "depth": {"top": 0, "bottom": depthlims[-1]},
+            "value": {"min": plotVarmin, "max": plotVarmax},
+            "units": plotVar['units'],
             "transect": [
                 {"lat": first_divelat, "lon": first_divelon},
                 {"lat": last_divelat, "lon": last_divelon}
@@ -1439,7 +1478,12 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         "data": [],
         "bathymetry": []
     }
+    # Add a transition point for oxygen
+    if varid.lower() == 'do':
+        section_data['properties']['value']['transition'] = 2.0
 
+    # Step through each unique dive in the section
+    # and add bathymetry position and depth
     for dd in range(0,len(unique_dives)):
         dive = unique_dives[dd]
         dive_inds = np.where(divenums == dive)[0]
@@ -1478,6 +1522,25 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
                 "value": nearest_values[point]
             })
         section_data["data"].append(newdive)
+
+    # Create a function to make sure all data is json serializable
+    def json_safe(obj):
+        if obj is None:
+            return None
+        if isinstance(obj, float):
+            return None if np.isnan(obj) or np.isinf(obj) else obj
+        if isinstance(obj, (np.floating,)):
+            v = float(obj)
+            return None if np.isnan(v) or np.isinf(v) else v
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        if isinstance(obj, (np.ndarray,)):
+            return [json_safe(x) for x in obj.tolist()]
+        if isinstance(obj, dict):
+            return {k: json_safe(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [json_safe(x) for x in obj]
+        return obj
         
 
     # Save the section data json
@@ -1486,13 +1549,16 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     try:
         os.makedirs(json_dir, exist_ok=True)
     except Exception:
+        print('Directory %s already exists' % json_dir)
         pass
     jsonpath = os.path.join(json_dir, f"{varid}_data.json")
+    # Write out the section data dictionary to a json file,
+    # while also ensuring that all the data is json serializable
     with open(jsonpath, 'w') as outfile:
-        json.dump(section_data, outfile)
+        json.dump(json_safe(section_data), outfile)
 
 
-# In[ ]:
+# %%
 
 
 def make_plots_for_transect(transect_id, deployment_id=None):
@@ -1812,7 +1878,7 @@ def make_plots_for_transect(transect_id, deployment_id=None):
 #     with open('C:/Users/APLUser/NANOOS/Gliders/GliderOutput/washelf/glider_info.json', 'w') as open_json:
 #         json.dump(glider_info, open_json)
 
-# In[ ]:
+# %%
 
 
 def main():
@@ -1924,7 +1990,7 @@ def main():
     sys.exit(0)
 
 
-# In[ ]:
+# %%
 
 
 if __name__ == "__main__":

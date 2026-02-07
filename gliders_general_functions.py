@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+# %%
 
-# In[ ]:
+# %%
 
 
 # load packages
@@ -38,7 +39,7 @@ def get_pathdirs():
 
 # # General Calculations
 
-# In[ ]:
+# %%
 
 
 def datetime_toordinal_withseconds(origdate):
@@ -67,7 +68,7 @@ def datetime_toordinal_withseconds(origdate):
             (hour + (minute + (second + (microsec/1e6))/60)/60)/24)
 
 
-# In[ ]:
+# %%
 
 
 def great_circle_calc(lat, lon):
@@ -89,7 +90,7 @@ def great_circle_calc(lat, lon):
 
 # # File functions
 
-# In[ ]:
+# %%
 
 
 def copyfile_func(src, dst):
@@ -115,7 +116,7 @@ def copyfile_func(src, dst):
         print('Error message: ' + str(e))
 
 
-# In[ ]:
+# %%
 
 
 def get_outputpath():
@@ -144,7 +145,7 @@ def get_outputpath():
 
 # # ERDDAP Database Functions
 
-# In[ ]:
+# %%
 
 
 def find_glider_datasets(glider_id, ooi_loc=None):
@@ -189,7 +190,7 @@ def find_glider_datasets(glider_id, ooi_loc=None):
     return glider_dataset_ids, glider_dataset_dates, delayed_ids
 
 
-# In[ ]:
+# %%
 
 
 def find_location_glider_ids(loc_text, ooi_loc=False):
@@ -257,7 +258,7 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
     return glider_dataset_ids, glider_dataset_dates, delayed_ids
 
 
-# In[ ]:
+# %%
 
 
 def load_erddap_glider_metadata(transect_id, dataset_id):
@@ -330,7 +331,7 @@ def load_erddap_glider_metadata(transect_id, dataset_id):
     return metadata
 
 
-# In[ ]:
+# %%
 
 
 def load_erddap_gliderdata(dataset_id, datetime_start, datetime_end, dac_vars):
@@ -403,7 +404,7 @@ def load_erddap_gliderdata(dataset_id, datetime_start, datetime_end, dac_vars):
     return df
 
 
-# In[ ]:
+# %%
 
 
 def set_dataset_id_label(glider_id, dataset_id, deployment_active=True):
@@ -450,7 +451,7 @@ def set_dataset_id_label(glider_id, dataset_id, deployment_active=True):
     return deployment_id, deployment_label
 
 
-# In[ ]:
+# %%
 
 
 def set_deployment_dataset_parameters(glider_id, dataset_id, 
@@ -589,7 +590,7 @@ def set_deployment_dataset_parameters(glider_id, dataset_id,
 
 # # Dataset info parameters
 
-# In[ ]:
+# %%
 
 
 def set_default_dataset_parameters(dataset):
@@ -606,7 +607,7 @@ def set_default_dataset_parameters(dataset):
     return dataset
 
 
-# In[ ]:
+# %%
 
 
 def load_glider_info_all(transect_id):
@@ -633,7 +634,7 @@ def load_glider_info_all(transect_id):
     return glider_info, gliderplot_info
 
 
-# In[ ]:
+# %%
 
 
 def load_glider_exclusions(transect_id):
@@ -659,7 +660,7 @@ def load_glider_exclusions(transect_id):
     return glider_exclusions
 
 
-# In[ ]:
+# %%
 
 
 def save_glider_info_all(transect_id, glider_obj, gliderplot_obj):
@@ -697,7 +698,7 @@ def save_glider_info_all(transect_id, glider_obj, gliderplot_obj):
     return
 
 
-# In[ ]:
+# %%
 
 
 def check_default_variable_names(variable_names):
@@ -757,7 +758,7 @@ def check_default_variable_names(variable_names):
 
 # # Functions to save jsons
 
-# In[ ]:
+# %%
 
 
 def save_deployment_info_jsons(outputpath, transect_id,
@@ -809,7 +810,7 @@ def save_deployment_info_jsons(outputpath, transect_id,
     return  
 
 
-# In[ ]:
+# %%
 
 
 def save_section_info_jsons(outputpath, transect_id,
@@ -857,7 +858,7 @@ def save_section_info_jsons(outputpath, transect_id,
 # "init_params_OOI.py" scripts are able to be converted into
 # jsons which are compatible with the new setup.
 
-# In[ ]:
+# %%
 
 
 def make_base_transects_info_from_orig_datasets():
@@ -957,7 +958,7 @@ def make_base_transects_info_from_orig_datasets():
     return
 
 
-# In[ ]:
+# %%
 
 
 def get_dataset_plotparams(dataset):
@@ -980,7 +981,7 @@ def get_dataset_plotparams(dataset):
     return plot_params
 
 
-# In[ ]:
+# %%
 
 
 def save_dataset_as_glider_info_jsons(outputpath, dataset, metadata):
@@ -1057,7 +1058,7 @@ def save_dataset_as_glider_info_jsons(outputpath, dataset, metadata):
     return
 
 
-# In[ ]:
+# %%
 
 
 def save_dataset_as_glider_plottinginfo_jsons(outputpath, dataset, metadata):
@@ -1121,7 +1122,7 @@ def save_dataset_as_glider_plottinginfo_jsons(outputpath, dataset, metadata):
         
     return
 
-# In[ ]:
+# %%
 
 def send_emailreport(msgtxt, subj,
                      fromaddr='nwemdata@uw.edu', toaddr='nwemdata@uw.edu',
