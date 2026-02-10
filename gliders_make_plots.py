@@ -154,8 +154,8 @@ def extract_position_variables(df, dep_plotinfo):
     # load bathymetry for GEBCO mapping #
     #####################################
     print('   Loading and interpolating bathymetry: ' + datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S'))
-    ds = xr.load_dataset(os.path.join(os.getcwd(),
-                                      'glider_bathy/GEBCO_2021/gebco_2021_n49.0_s39.0_w-130.0_e-123.0.nc'))
+    bathy_path = gliders_gen.get_bathypath()
+    ds = xr.load_dataset(bathy_path)
 
     lats = ds['lat']
     lons = ds['lon']
