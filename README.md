@@ -26,13 +26,9 @@ The `nanoos_gliders` package automates the processing of glider oceanographic da
 
 ```python
 from init_params_NANOOS import init_params
-import glider_main
 
-# Initialize parameters and run processing
+# Initialize parameters
 gliderOps, outputpath = init_params()
-
-# Main processing loop handles all active deployments
-# See glider_main.py for full workflow
 ```
 
 ## Project Structure
@@ -40,7 +36,7 @@ gliderOps, outputpath = init_params()
 ```
 nanoos_gliders/
 ├── classes.py                              # Core data classes
-├── glider_main.py                          # Main processing script
+├── gliders_main.py                         # Wrapper for check + plot scripts
 ├── gliders_general_functions.py            # Utility functions
 ├── gliders_make_plots.py                   # Plotting functions
 ├── create_jsons.py                         # JSON metadata generation
@@ -65,14 +61,10 @@ nanoos_gliders/
   - `WAShelfGlider`, `TrinidadGlider`, `LaPushGlider`: Specific implementations
 - **Dataset**: Encapsulates deployment parameters and metadata
 
-### Main Processing (`glider_main.py`)
+### Wrapper Script (`gliders_main.py`)
 
-Orchestrates the complete data processing workflow:
-1. Load deployment parameters
-2. Connect to ERDDAP and retrieve data
-3. Identify transect sections
-4. Generate scientific plots
-5. Create JSON metadata files
+Runs `gliders_check_transect_deployments.py` and `gliders_make_plots.py` with a
+single CLI, passing through transect/deployment arguments and capturing logs.
 
 ### Plotting (`gliders_make_plots.py`)
 
@@ -109,9 +101,30 @@ See [USAGE_GUIDE.md](USAGE_GUIDE.md) for detailed examples and workflows.
 ### Basic Workflow
 
 1. **Configure Deployment**: Define deployment parameters in initialization file
-2. **Run Processing**: Execute `glider_main.py` to process active deployments
+2. **Run Processing**: Execute `gliders_main.py` to run checks and plots
 3. **Check Status**: Use `gliders_check_transect_deployments.py` to monitor
 4. **Add Deployments**: Use `gliders_add_transect_deployments.py` for new data
+
+### Wrapper Script
+
+Use the wrapper to run checks and plots with logging:
+
+```bash
+python gliders_main.py -t washelf --all
+```
+
+Common examples:
+
+```bash
+# Checks only
+python gliders_main.py -t washelf --check
+
+# Plots only
+python gliders_main.py -t washelf --plots
+
+# Plots for a single deployment
+python gliders_main.py -t washelf --plots -d 2024_Jan_Ongoing
+```
 
 ## API Reference
 

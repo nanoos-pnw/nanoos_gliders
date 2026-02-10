@@ -9,7 +9,7 @@ Complete API documentation for the `nanoos_gliders` package.
    - [Dataset Class](#dataset-class)
    - [JSON Classes](#json-classes)
 2. [Main Modules](#main-modules)
-   - [glider_main](#glider_main)
+    - [gliders_main](#gliders_main)
    - [gliders_general_functions](#gliders_general_functions)
    - [gliders_make_plots](#gliders_make_plots)
    - [create_jsons](#create_jsons)
@@ -401,28 +401,24 @@ Add section metadata.
 
 ## Main Modules
 
-### glider_main
+### gliders_main
 
-Main processing script that orchestrates the complete workflow.
-
-**Script Flow:**
-1. Load initialization parameters
-2. Iterate through active glider lines
-3. For each active deployment:
-   - Connect to ERDDAP
-   - Retrieve metadata and data
-   - Detect transect sections
-   - Generate plots
-   - Create JSON metadata
+Wrapper script that passes arguments to `gliders_check_transect_deployments.py`
+and `gliders_make_plots.py`, running them in sequence and capturing logs.
 
 **Usage:**
 ```bash
-python glider_main.py
+python gliders_main.py -t washelf --all
 ```
 
-**Key Variables:**
-- `gliderOps` (list): List of Glider objects
-- `outputpath` (str): Output directory path
+**Options:**
+- `-t`, `--transect`: Transect name (required)
+- `-d`, `--deployment`: Deployment name for plotting (optional)
+- `--check`: Run deployment checks only
+- `--plots`: Run plotting only
+- `--all`: Run checks then plots
+- `--log-file`: Write logs to a specific file
+- `--log-dir`: Directory for timestamped logs (default: logs)
 
 ---
 

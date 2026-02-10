@@ -212,6 +212,15 @@ print(f"Info directory: {infodir}")
 print(f"Output directory: {outputdir}")
 ```
 
+### Run the Wrapper Script (Optional)
+
+Use the wrapper to run deployment checks and plotting, passing arguments to the
+underlying scripts and writing a combined log:
+
+```bash
+python gliders_main.py -t washelf --all
+```
+
 ## Troubleshooting
 
 ### Common Issues

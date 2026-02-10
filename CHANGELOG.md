@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added gliders_main wrapper script to run checks and plots with logging.
+
 ### Planned Features
 - Automated detection of new deployments from ERDDAP
 - Real-time processing capabilities
@@ -52,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Core Modules
 - `classes.py`: Glider and Dataset classes
-- `glider_main.py`: Main processing script
+- `gliders_main.py`: Wrapper for checks and plotting
 - `gliders_general_functions.py`: Utility functions
 - `gliders_make_plots.py`: Plotting functions
 - `create_jsons.py`: JSON metadata creation
@@ -180,7 +183,7 @@ If you were using earlier prototype scripts:
    - Update colormap specifications to JSON format
 
 4. **Adopt new workflow:**
-   - Use `glider_main.py` for standard processing
+   - Use `gliders_main.py` for standard processing
    - Use deployment management scripts for updates
    - Follow documented API patterns
 

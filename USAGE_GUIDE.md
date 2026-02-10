@@ -20,7 +20,7 @@ The standard workflow processes all active glider deployments:
 
 ```python
 # Run the main processing script
-python glider_main.py
+python gliders_main.py -t washelf --all
 ```
 
 This script:
@@ -30,6 +30,35 @@ This script:
 4. Generates scientific plots for all variables
 5. Creates JSON metadata files
 6. Saves outputs to configured directory
+
+### Wrapper Script (gliders_main.py)
+
+Use the wrapper to run checks and plots from a single command. It passes
+arguments through to `gliders_check_transect_deployments.py` and
+`gliders_make_plots.py`, and captures a combined log.
+
+```bash
+python gliders_main.py -t washelf --all
+```
+
+Common options:
+- `--check`: only run deployment checks
+- `--plots`: only run plotting
+- `--all`: run checks, then plots
+- `-d`: optional deployment name for plotting
+- `--log-file`: write logs to a specific file
+- `--log-dir`: directory for timestamped logs (default: logs)
+
+If no flags are provided, the wrapper runs both checks and plots.
+
+Examples:
+
+```bash
+python gliders_main.py -t washelf --check
+python gliders_main.py -t washelf --plots
+python gliders_main.py -t washelf --plots -d 2024_Jan_Ongoing
+python gliders_main.py -t washelf --all --log-dir logs
+```
 
 ### Manual Processing Steps
 

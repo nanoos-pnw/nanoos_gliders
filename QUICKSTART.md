@@ -124,7 +124,7 @@ Available variables: 45
 ### Run Processing
 
 ```bash
-python glider_main.py
+python gliders_main.py -t washelf --all
 ```
 
 This will:
@@ -135,6 +135,9 @@ This will:
 5. Create JSON metadata
 
 **Processing time**: 2-10 minutes depending on data size and internet speed
+
+The wrapper passes arguments to `gliders_check_transect_deployments.py` and
+`gliders_make_plots.py`.
 
 ### Check Results
 
@@ -256,7 +259,15 @@ conda activate gliders_env
 
 ### Run Main Processing
 ```bash
-python glider_main.py
+python gliders_main.py -t washelf --all
+```
+
+Common variants:
+
+```bash
+python gliders_main.py -t washelf --check
+python gliders_main.py -t washelf --plots
+python gliders_main.py -t washelf --plots -d 2024_Jan_Ongoing
 ```
 
 ### Check Deployment Status
@@ -379,7 +390,7 @@ print(datasets['Dataset ID'])
 ### File Structure
 ```
 nanoos_gliders/
-├── glider_main.py              # Main script
+├── gliders_main.py             # Wrapper for checks and plotting
 ├── init_params_NANOOS.py       # Your config (create this)
 ├── classes.py                  # Core classes
 ├── gliders_make_plots.py       # Plotting
