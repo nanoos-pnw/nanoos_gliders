@@ -17,6 +17,7 @@ import sys
 import getopt
 import gc
 import shutil
+import traceback
 
 # import classes needed to build initial parameters objects
 from classes import Dataset
@@ -823,10 +824,9 @@ def main():
     try:
         successFlag = check_transect_deployments(transectId)
     except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
         print('Error in processing:')
         print(e)
-        print('Error occurs on line ' + str(exc_tb.tb_lineno))
+        traceback.print_exc()
 
         error_msg = "An error occured while updating deployments for transect " + transectId + ".\n\n" + "Error message:\n" + str(e)
         error_sbj = "NVS Gliders Checking Deployment Error for Transect " + transectId

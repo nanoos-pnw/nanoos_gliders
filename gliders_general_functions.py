@@ -37,6 +37,17 @@ def get_pathdirs():
         
     return basedir, infodir, outputdir
 
+def get_bathypath():
+
+    basedir, infodir, outputdir = get_pathdirs()
+    with open(os.path.join(infodir, 'pathdirs.json'), "r") as pathfile:
+        pathjson = json.load(pathfile)
+    bathydir = pathjson['bathydir']
+    bathyfile = pathjson['bathymetry_file']
+    bathypath = os.path.join(bathydir, bathyfile)
+        
+    return bathypath
+
 # # General Calculations
 
 # %%
