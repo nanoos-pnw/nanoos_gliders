@@ -24,6 +24,7 @@ from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 
 from importlib import reload
+import traceback
 
 # import classes needed to build initial parameters objects
 from classes import Dataset
@@ -1964,6 +1965,7 @@ def main():
         print('An error occured while making plots for transect ' + transectName)
         print('Error message:')
         print(e)
+        traceback.print_exc()
 
         error_msg = "An error occured while making plots for transect " + transectName + ".\n\n" + "Error message:\n" + str(e)
         error_sbj = "NVS Gliders Plotting Error for Transect " + transectName
