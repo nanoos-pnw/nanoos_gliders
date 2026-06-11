@@ -171,7 +171,8 @@ def find_glider_datasets(glider_id, ooi_loc=None):
     search_url  = e.get_search_url(response='csv', **kw)
     search_info = pd.read_csv(search_url)
 
-    all_dataset_ids = search_info['Dataset ID'].to_numpy().squeeze()
+    # Keep this as a list so a single search result does not become a scalar string.
+    all_dataset_ids = search_info['Dataset ID'].tolist()
     
     
     # Identify the dataset IDs which contain the glider ID
@@ -217,13 +218,15 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
     search_url  = e.get_search_url(search_for=search_for_text, response='csv', **kw)
     search_info = pd.read_csv(search_url)
 
-    all_dataset_ids = search_info['Dataset ID'].to_numpy().squeeze()
+    # Keep this as a list so a single search result does not become a scalar string.
+    all_dataset_ids = search_info['Dataset ID'].tolist()
     
     # If the search text is an OOI glider hydrographic line, 
     # add an additional search to double check the meta-data
     # to ensure it is the correct hydrographic line
     if ooi_loc:
-        all_dataset_info = search_info['Info'].to_numpy().squeeze()
+        # Keep this as a list so indexing is by dataset, not by character.
+        all_dataset_info = search_info['Info'].tolist()
         keeplines = [False for ii in range(0,len(all_dataset_info))]
         
         for ii in range(0,len(all_dataset_info)):
@@ -238,7 +241,9 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
                 print('      No "hydrographic_line" available for:',all_dataset_ids[ii])
                 
         if any(keeplines):
-            all_dataset_ids = all_dataset_ids[np.where(keeplines)[0]]
+            all_dataset_ids = [all_dataset_ids[ii] for ii in np.where(keeplines)[0]]
+        else:
+            all_dataset_ids = []
                 
     
     

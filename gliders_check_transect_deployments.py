@@ -575,6 +575,8 @@ def check_transect_deployments(transect_id):
 
         # Extract out the existing dataset IDs and start dates
         glider_datasets = []
+        dataset_ids = []
+        dataset_enddates = []
         for ii in range(0,len(glider_info['deployments'])):
             
             # Look through each deployment for a given glider,
@@ -841,8 +843,8 @@ def main():
         sys.exit(2)
 
     if not(successFlag):
-        error_msg = "An error occured while updating deployments for transect " + transectName + ".\n\nCheck the processing log for details."
-        error_sbj = "NVS Gliders Checking Deployment Error for Transect " + transectName
+        error_msg = "An error occured while updating deployments for transect " + transectId + ".\n\nCheck the processing log for details."
+        error_sbj = "NVS Gliders Checking Deployment Error for Transect " + transectId
         __, infodir, __ = gliders_gen.get_pathdirs()
         with open(os.path.join(infodir, 'user_info.json'), 'r') as infofile:
             user_info = json.load(infofile)

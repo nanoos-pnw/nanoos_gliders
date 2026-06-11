@@ -1511,10 +1511,23 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
                 
         # Get the depths and values nearest to each target depth
         nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
-        nearest_depths = zvar[dive_inds][nearest_indices]
-        nearest_values = datavar[dive_inds][nearest_indices]
+        if len(nearest_indices) > 0:
+            nearest_indices = np.unique(np.array(nearest_indices)).tolist()
+        
+        # Check if there are any nearest indices to add for the current dive; if not, skip to the next dive
         if len(nearest_indices) == 0:
             continue
+        else:
+            # Extract the depths and values for the nearest indices, and remove any NaN values
+            nearest_depths = zvar[dive_inds][nearest_indices]
+            nearest_values = datavar[dive_inds][nearest_indices]
+
+            # Remove any NaN values from the nearest depths and values
+            valid_inds = np.where(~np.isnan(nearest_values))[0]
+            nearest_depths = nearest_depths[valid_inds]
+            nearest_values = nearest_values[valid_inds]
+
+    
 
         # Step through each point in the dive, and add the depth and value to the json
         for point in range(0,len(nearest_depths)):
