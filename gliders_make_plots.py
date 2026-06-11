@@ -395,10 +395,20 @@ def load_turning_points(outputpath, transect_id, deployment_id,
 
     # Find the indices in the dataframe precise time which
     # correspond with the section start and end times
-    section_startinds = [np.where([ii == jj for ii in ptime])[0][0] 
-                         for jj in section_starttimes]
-    section_endinds = [np.where([ii == jj for ii in ptime])[0][0] 
-                       for jj in section_endtimes]
+    try:
+        section_startinds = [np.where([ii == jj for ii in ptime])[0][0] 
+                            for jj in section_starttimes]
+    except:
+        print('   No existing section start times found in the dataframe precise time')
+        section_startinds = [np.argmin([abs((ii - jj).total_seconds()) for ii in ptime]) 
+                            for jj in section_starttimes]
+    try:
+        section_endinds = [np.where([ii == jj for ii in ptime])[0][0] 
+                        for jj in section_endtimes]
+    except:
+        print('   No existing section end times found in the dataframe precise time')
+        section_endinds = [np.argmin([abs((ii - jj).total_seconds()) for ii in ptime]) 
+                        for jj in section_endtimes]
 
     section_segments = [(section_startinds[ii], section_endinds[ii]) 
                         for ii in range(0,len(section_startinds))]
