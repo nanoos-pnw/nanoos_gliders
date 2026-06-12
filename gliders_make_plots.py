@@ -1550,6 +1550,11 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             nearest_depths = nearest_depths[valid_inds]
             nearest_values = nearest_values[valid_inds]
 
+            # Sort the values by depth
+            sort_inds = np.argsort(nearest_depths)
+            nearest_depths = nearest_depths[sort_inds]
+            nearest_values = nearest_values[sort_inds]
+
     
 
         # Step through each point in the dive, and add the depth and value to the json
