@@ -1519,13 +1519,13 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         zmin = np.nanmin(zvar[dive_inds])
         zmax = np.nanmax(zvar[dive_inds])
         if zmax > 100:
-            target_depth_shallow = np.arange(0, 100, depth_step/2)
-            target_depth_deep = np.arange(100, np.ceil(depth_step*zmax)/depth_step, depth_step)
-            target_depths = np.concatenate((target_depth_shallow, target_depth_deep))
+            target_depth_shallow = np.arange(0, 100+depth_step/2, depth_step/2)
+            target_depth_deep = np.arange(100, np.ceil(depth_step*zmax)/depth_step+depth_step, depth_step)
+            target_depths = np.unique(np.concatenate((target_depth_shallow, target_depth_deep)))
         else:
             shallow_depthstep = depth_step/2
             target_depths = np.arange(np.floor(shallow_depthstep*zmin)/shallow_depthstep, 
-                                      np.ceil(shallow_depthstep*zmax)/shallow_depthstep, shallow_depthstep)
+                                      np.ceil(shallow_depthstep*zmax)/shallow_depthstep+shallow_depthstep, shallow_depthstep)
         #print('\nTarget depths for dive ' + str(dive) + ':')
         #print(target_depths)
         #print(zvar[dive_inds])
