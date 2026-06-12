@@ -1516,13 +1516,26 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         }
 
         # Define the data target depths in the current dive
-        target_depths = np.arange(np.floor(depth_step*np.nanmin(zvar[dive_inds]))/depth_step, 
-                                  np.ceil(depth_step*np.nanmax(zvar[dive_inds]))/depth_step, depth_step)
+        zmin = np.nanmin(zvar[dive_inds])
+        zmax = np.nanmax(zvar[dive_inds])
+        if zmax > 100:
+            target_depth_shallow = np.arange(0, 100, depth_step/2)
+            target_depth_deep = np.arange(100, np.ceil(depth_step*zmax)/depth_step, depth_step)
+            target_depths = np.concatenate((target_depth_shallow, target_depth_deep))
+        else:
+            shallow_depthstep = depth_step/2
+            target_depths = np.arange(np.floor(shallow_depthstep*zmin)/shallow_depthstep, 
+                                      np.ceil(shallow_depthstep*zmax)/shallow_depthstep, shallow_depthstep)
+        #print('\nTarget depths for dive ' + str(dive) + ':')
+        #print(target_depths)
+        #print(zvar[dive_inds])
                 
         # Get the depths and values nearest to each target depth
         nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
+        #print(nearest_indices)
         if len(nearest_indices) > 0:
             nearest_indices = np.unique(np.array(nearest_indices)).tolist()
+        #print(nearest_indices)
         
         # Check if there are any nearest indices to add for the current dive; if not, skip to the next dive
         if len(nearest_indices) == 0:
