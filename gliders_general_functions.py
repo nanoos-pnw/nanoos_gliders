@@ -217,6 +217,13 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
     search_for_text = loc_text
     search_url  = e.get_search_url(search_for=search_for_text, response='csv', **kw)
     search_info = pd.read_csv(search_url)
+    if ooi_loc:
+        search_for_ooi_text = '"OOI Coastal Endurance"'
+        search_ooi_url  = e.get_search_url(search_for=search_for_ooi_text, response='csv', **kw)
+        search_info_ooi = pd.read_csv(search_ooi_url)
+
+        matches = search_info_ooi.merge(search_info, how='inner')
+        search_info = matches.copy()
 
     # Keep this as a list so a single search result does not become a scalar string.
     all_dataset_ids = search_info['Dataset ID'].tolist()
@@ -698,18 +705,18 @@ def save_glider_info_all(transect_id, glider_obj, gliderplot_obj):
     info_json = 'glider_info.json'
     with open(os.path.join(transect_dir, info_json), "w") as write_file:
         if isinstance(glider_obj, dict):
-            json.dump(glider_obj, write_file) 
+            json.dump(glider_obj, write_file, indent=4) 
         else:
-            json.dump(glider_obj.__dict__, write_file)  
+            json.dump(glider_obj.__dict__, write_file, indent=4)  
         
     
     # Save updated glider_plottinginfo.json    
     info_json = 'glider_plottinginfo.json'
     with open(os.path.join(transect_dir, info_json), "w") as write_file:
         if isinstance(gliderplot_obj, dict):
-            json.dump(gliderplot_obj, write_file)  
+            json.dump(gliderplot_obj, write_file, indent=4)  
         else:
-            json.dump(gliderplot_obj.__dict__, write_file)  
+            json.dump(gliderplot_obj.__dict__, write_file, indent=4)  
         
     return
 
@@ -821,7 +828,7 @@ def save_deployment_info_jsons(outputpath, transect_id,
     # savepath for info.json files
     info_json = os.path.join(outputpath, transect_id, plotting_info['id'], 'deployment_info.json')
     with open(info_json, "w") as write_file:
-        json.dump(deployment_dict.__dict__, write_file) 
+        json.dump(deployment_dict.__dict__, write_file, indent=4) 
 
     return  
 
@@ -861,7 +868,7 @@ def save_section_info_jsons(outputpath, transect_id,
         section_json = os.path.join(outputpath, transect_id, deployment_info['id'],
                                     data_coords['section_id'][k], 'section_info.json')
         with open(section_json, "w") as write_file:
-            json.dump(section_dict.__dict__, write_file) 
+            json.dump(section_dict.__dict__, write_file, indent=4) 
         
     return
 
@@ -968,7 +975,7 @@ def make_base_transects_info_from_orig_datasets():
     # Write out all of the transect info into the
     # UAV transects json
     with open('uav_transects.json', "w") as write_file:
-        json.dump(transects, write_file)
+        json.dump(transects, write_file, indent=4)
         
         
     return
@@ -1034,7 +1041,7 @@ def save_dataset_as_glider_info_jsons(outputpath, dataset, metadata):
                                 section_data_url_template=metadata['section_data_url_template'])
 
         with open(info_json, "w") as write_file:
-            json.dump(glider_obj.__dict__, write_file) 
+            json.dump(glider_obj.__dict__, write_file, indent=4) 
 
     else:
 
@@ -1069,7 +1076,7 @@ def save_dataset_as_glider_info_jsons(outputpath, dataset, metadata):
 
     # save updated glider_info.json
     with open(info_json, "w") as write_file:
-        json.dump(glider_obj.__dict__, write_file)  
+        json.dump(glider_obj.__dict__, write_file, indent=4)
         
     return
 
@@ -1102,7 +1109,7 @@ def save_dataset_as_glider_plottinginfo_jsons(outputpath, dataset, metadata):
         gliderplot_obj = Glider_Plotting_Json(transect_id=dataset.transect_id, 
                                               transect_label=metadata['transect_label'])
         with open(info_json, "w") as write_file:
-            json.dump(gliderplot_obj.__dict__, write_file) 
+            json.dump(gliderplot_obj.__dict__, write_file, indent=4)
 
     else:
         with open(info_json) as g:
@@ -1134,7 +1141,7 @@ def save_dataset_as_glider_plottinginfo_jsons(outputpath, dataset, metadata):
 
     # save updated glider_info.json
     with open(info_json, "w") as write_file:
-        json.dump(gliderplot_obj.__dict__, write_file)  
+        json.dump(gliderplot_obj.__dict__, write_file, indent=4)
         
     return
 

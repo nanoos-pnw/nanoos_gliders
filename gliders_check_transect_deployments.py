@@ -140,7 +140,7 @@ def check_glider_deployment_order(transect_id):
                 deploy_info['id'] = deployment_id
                 deploy_info['label'] = deployment_label
                 with open(os.path.join(transect_dir, deployment_id, deploy_json), "w") as deploy_file:
-                    json.dump(deploy_info, deploy_file)
+                    json.dump(deploy_info, deploy_file, indent=4)
                     
             # Update the glider info json with the correct deployment labels
             matchind = np.where([plot_dep['id'] == gl_deploy[sortinds[ii]]['id'] 
@@ -159,7 +159,7 @@ def check_glider_deployment_order(transect_id):
     # Re-write the json with the sorted deployments
     info_json = 'glider_info.json'
     with open(os.path.join(transect_dir,info_json), "w") as write_file:
-        json.dump(glider_info, write_file)  
+        json.dump(glider_info, write_file, indent=4)
         
     
     #############################
@@ -182,7 +182,7 @@ def check_glider_deployment_order(transect_id):
     # Re-write the json with the sorted deployments
     info_json = 'glider_plottinginfo.json'
     with open(os.path.join(transect_dir,info_json), "w") as write_file:
-        json.dump(gliderplot_info, write_file)  
+        json.dump(gliderplot_info, write_file, indent=4)  
 
 
 # In[ ]:
@@ -432,15 +432,15 @@ def update_inactive_gliders_jsons(transect_id, glider_id,
 def get_ooi_deploymentname(transect_id):
     
     if transect_id == 'ooi_ghs':
-        location_txt = "Grays Harbor Shallow"
+        location_txt = '"Grays Harbor Shallow"'
     elif transect_id == 'ooi_ghd':
-        location_txt = "Grays Harbor Deep"
+        location_txt = '"Grays Harbor Deep"'
     elif transect_id == 'ooi_ns':
-        location_txt = "Newport Hydrographic Shallow"
+        location_txt = '"Newport Hydrographic Shallow"'
     elif transect_id == 'ooi_nd':
-        location_txt = "Newport Hydrographic Deep"
+        location_txt = '"Newport Hydrographic Deep"'
     elif transect_id == 'ooi_coosbay':
-        location_txt = "Coos Bay"
+        location_txt = '"Coos Bay"'
         
     else:
         print('Valid transects include: ')

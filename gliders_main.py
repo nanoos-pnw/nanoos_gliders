@@ -74,6 +74,11 @@ def main():
         help="Run gliders_make_plots.",
     )
     parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Rebuild deployments by recalculating turning points instead of loading existing ones.",
+    )
+    parser.add_argument(
         "--log-file",
         help="Path to log file. If omitted, a timestamped log is created in ./logs.",
     )
@@ -117,6 +122,8 @@ def main():
             plots_cmd = [sys.executable, plots_script, "-t", args.transect]
             if args.deployment:
                 plots_cmd.extend(["-d", args.deployment])
+            if args.rebuild:
+                plots_cmd.append("--rebuild")
             exit_code = run_script("gliders_make_plots", plots_cmd, log_handle)
             if exit_code != 0:
                 sys.exit(exit_code)

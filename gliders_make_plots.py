@@ -155,7 +155,9 @@ def extract_position_variables(df, dep_plotinfo):
     #####################################
     print('   Loading and interpolating bathymetry: ' + datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S'))
     bathy_path = gliders_gen.get_bathypath()
-    ds = xr.load_dataset(bathy_path)
+    # Force eager in-memory loading so xarray does not require dask chunk managers.
+    ds = xr.open_dataset(bathy_path, chunks=None)
+    ds = ds.load()
 
     lats = ds['lat']
     lons = ds['lon']
@@ -426,6 +428,35 @@ def load_turning_points(outputpath, transect_id, deployment_id,
         
         
     return data_coords
+
+
+def turning_points_are_valid(data_coords):
+    """Check that loaded turning-point arrays are self-consistent."""
+    endpts = np.array(data_coords.get('endpts', []))
+    segments = data_coords.get('segments', [])
+    section_ids = data_coords.get('section_id', [])
+    section_labels = data_coords.get('section_label', [])
+    orientations = data_coords.get('orientation', [])
+
+    if len(endpts) < 2:
+        return False
+
+    if len(segments) < 1:
+        return False
+
+    if len(segments) != len(section_ids):
+        return False
+
+    if len(segments) != len(section_labels):
+        return False
+
+    if len(segments) != len(orientations):
+        return False
+
+    if len(section_labels) > len(endpts):
+        return False
+
+    return True
 
 
 # %%
@@ -1129,7 +1160,8 @@ def make_transect_path_plot(outputpath, transect_id,
                 dep_plotinfo['latlimmap'][1], dep_plotinfo['latlimmap'][1], 
                 dep_plotinfo['latlimmap'][0], dep_plotinfo['latlimmap'][0]], 
                '--k', alpha=0.25, label='Original Limits')
-    for ii in range(0,len(data_coords['section_label'])):
+    n_annotations = np.min([len(data_coords['section_label']), len(data_coords['endpts'])])
+    for ii in range(0,n_annotations):
         ax[0].annotate(data_coords['section_label'][ii],
                        (data_coords['plon'][data_coords['endpts'][ii]], 
                         data_coords['plat'][data_coords['endpts'][ii]]))
@@ -1142,7 +1174,7 @@ def make_transect_path_plot(outputpath, transect_id,
 
     ax[1].plot(data_coords['ptime'][data_coords['endpts']], 
                data_coords['plon'][data_coords['endpts']], '--*')
-    for ii in range(0,len(data_coords['section_label'])):
+    for ii in range(0,n_annotations):
         ax[1].annotate(data_coords['section_label'][ii],
                        (data_coords['ptime'][data_coords['endpts'][ii]], 
                         data_coords['plon'][data_coords['endpts'][ii]]))
@@ -1526,16 +1558,11 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
             shallow_depthstep = depth_step/2
             target_depths = np.arange(np.floor(shallow_depthstep*zmin)/shallow_depthstep, 
                                       np.ceil(shallow_depthstep*zmax)/shallow_depthstep+shallow_depthstep, shallow_depthstep)
-        #print('\nTarget depths for dive ' + str(dive) + ':')
-        #print(target_depths)
-        #print(zvar[dive_inds])
                 
         # Get the depths and values nearest to each target depth
         nearest_indices = [np.argmin(np.abs(zvar[dive_inds] - td)) for td in target_depths]
-        #print(nearest_indices)
         if len(nearest_indices) > 0:
             nearest_indices = np.unique(np.array(nearest_indices)).tolist()
-        #print(nearest_indices)
         
         # Check if there are any nearest indices to add for the current dive; if not, skip to the next dive
         if len(nearest_indices) == 0:
@@ -1597,13 +1624,13 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     # Write out the section data dictionary to a json file,
     # while also ensuring that all the data is json serializable
     with open(jsonpath, 'w') as outfile:
-        json.dump(json_safe(section_data), outfile)
+        json.dump(json_safe(section_data), outfile, indent=4)
 
 
 # %%
 
 
-def make_plots_for_transect(transect_id, deployment_id=None):
+def make_plots_for_transect(transect_id, deployment_id=None, rebuild_deployments=False):
     
     # run init_params.py to define all required parameters when new deployment added
     # load init_params.json file
@@ -1677,9 +1704,10 @@ def make_plots_for_transect(transect_id, deployment_id=None):
             # end points
             ####################################
             data_coords = extract_position_variables(df_pos, deployment_plotinfo)
-            if (os.path.exists(os.path.join(outputpath, 
-                                            glider_info['transect']['id'], 
-                                            deployment_plotinfo['id']))
+            if (not rebuild_deployments
+                and os.path.exists(os.path.join(outputpath, 
+                                                glider_info['transect']['id'], 
+                                                deployment_plotinfo['id']))
                 and
                 not(deployment['deployment_active'])):
                 # If the folder for the deployment,
@@ -1690,6 +1718,11 @@ def make_plots_for_transect(transect_id, deployment_id=None):
                                                   glider_info['transect']['id'], 
                                                   deployment_plotinfo['id'],
                                                   df_pos, data_coords)
+                # Validate loaded section arrays; if they are inconsistent,
+                # rebuild turning points instead of failing later in plotting.
+                if not turning_points_are_valid(data_coords):
+                    print('   Loaded turning points are inconsistent; recalculating turning points')
+                    data_coords = calc_turning_points(data_coords, deployment_plotinfo, None)
                 # Update the make_jsons_flag to indicate that a new
                 # json DOES NOT need to be made
                 make_jsons_flag = True # Keep it true for now
@@ -1703,9 +1736,10 @@ def make_plots_for_transect(transect_id, deployment_id=None):
                 # This can be partially done to update existing
                 # coordinates, or fully done if needed
 
-                if (os.path.exists(os.path.join(outputpath, 
-                                                glider_info['transect']['id'], 
-                                                deployment_plotinfo['id']))
+                if (not rebuild_deployments
+                    and os.path.exists(os.path.join(outputpath, 
+                                                    glider_info['transect']['id'], 
+                                                    deployment_plotinfo['id']))
                     and
                     deployment_plotinfo['verified']
                    ):
@@ -1716,6 +1750,9 @@ def make_plots_for_transect(transect_id, deployment_id=None):
                                                           glider_info['transect']['id'], 
                                                           deployment_plotinfo['id'],
                                                           df_pos, data_coords)
+                    if not turning_points_are_valid(prev_datacoords):
+                        print('   Loaded previous turning points are inconsistent; recalculating all turning points')
+                        prev_datacoords = None
                 else:
                     prev_datacoords = None
 
@@ -1754,6 +1791,8 @@ def make_plots_for_transect(transect_id, deployment_id=None):
                 for folder in existing_folders:
                     src = os.path.join(deployment_folder, folder)
                     dst = os.path.join(deployment_folder, folder+'_backup')
+                    if os.path.exists(dst):
+                        shutil.rmtree(dst)
                     gliders_gen.copyfile_func(src, dst)
                     del src, dst
                     
@@ -1774,6 +1813,9 @@ def make_plots_for_transect(transect_id, deployment_id=None):
                                                             data_coords['ptime'][startind].strftime('%Y-%m-%dT%H:%M:%SZ'), 
                                                             (data_coords['ptime'][endind]+datetime.timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ'),
                                                             vars_to_get)
+                    if df is None or len(df) == 0:
+                        print('No data found for section ' + str(ii) + ' of deployment ' + deployment['dataset_id'])
+                        continue
                     df = df.reset_index()
                     df = df[df['precise_time (UTC)'] <= data_coords['ptime'][endind]]
                     # Double-check that we have the right number of points
@@ -1926,7 +1968,7 @@ def make_plots_for_transect(transect_id, deployment_id=None):
 def main():
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hu:t:d:", ["help", "transect", "deployment"])
+        opts, args = getopt.getopt(sys.argv[1:], "hu:t:d:r", ["help", "transect", "deployment", "rebuild"])
     except Exception as inst:
         # print help information and exit:
         print('Error in getting options: ' + str(inst)) # will print something like "option -a not recognized"
@@ -1937,6 +1979,7 @@ def main():
     processFlag = False
     transectFlag = False
     deploymentFlag = False
+    rebuildFlag = False
     
     # For all the command-line arguments, update a flag to indicate if the option was given,
     # and extract the value of the command-line argument
@@ -1952,6 +1995,8 @@ def main():
         elif o in ("-d", "--deployment"):
             deploymentFlag = True
             deploymentName = a
+        elif o in ("-r", "--rebuild"):
+            rebuildFlag = True
         else:
             assert False, "unhandled option"
     
@@ -1993,13 +2038,16 @@ def main():
         print('Note that if the deployment is still active, plots will be made for the current data.')
     else:
         deploymentName = None
+
+    if rebuildFlag:
+        print('Rebuild mode enabled: existing turning points will not be loaded; turning points will be recalculated.')
         
    
 
     #######################################
     # Make the plots for a defined transect
     try:
-        successFlag = make_plots_for_transect(transectName, deploymentName)
+        successFlag = make_plots_for_transect(transectName, deploymentName, rebuildFlag)
         print(datetime.datetime.now().strftime('%Y-%b-%d %H:%M:%S') 
                   + ' - Processing for transect "' + transectName + '" complete.\n\n\n')
     except Exception as e:

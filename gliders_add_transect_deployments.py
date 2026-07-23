@@ -132,7 +132,7 @@ def check_glider_deployment_order(transect_id):
     # Re-write the json with the sorted deployments
     info_json = 'glider_info.json'
     with open(os.path.join(transect_dir,info_json), "w") as write_file:
-        json.dump(glider_info, write_file)  
+        json.dump(glider_info, write_file, indent=4)  
         
     
     #############################
@@ -156,7 +156,7 @@ def check_glider_deployment_order(transect_id):
     # Re-write the json with the sorted deployments
     info_json = 'glider_plottinginfo.json'
     with open(os.path.join(transect_dir,info_json), "w") as write_file:
-        json.dump(gliderplot_info, write_file)  
+        json.dump(gliderplot_info, write_file, indent=4)  
 
 
 # In[ ]:
