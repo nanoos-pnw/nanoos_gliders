@@ -502,9 +502,10 @@ def check_transect_deployments(transect_id):
         # glider on the Glider ERDDAP
         if 'ooi' in transect_id:
             print('      OOI Transect: Look for gliders by transect label.')
+            loc_text = get_ooi_deploymentname(transect_id)
             [glider_alldatasets,
              glider_alldataset_times,
-             glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(glider_id, ooi_loc=True)
+             glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(loc_text, ooi_loc=True)
         else:
             [glider_alldatasets,
              glider_alldataset_times,

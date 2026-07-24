@@ -23,6 +23,7 @@ from classes import Dataset
 from importlib import reload
 
 import gliders_general_functions as gliders_gen
+import gliders_check_transect_deployments as gliders_check
 
 import create_jsons
 from create_jsons import GliderJson
@@ -359,9 +360,10 @@ def add_transect_deployments(transect_id, glider_id, location_txt=None):
     # Get a list of all datasets for a given
     # glider on the Glider ERDDAP
     if ('ooi' in transect_id) and (location_txt is not None):
+        loc_text = gliders_check.get_ooi_deploymentname(transect_id)
         [glider_alldatasets,
          glider_alldataset_times,
-         glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(location_txt)
+         glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(loc_text, ooi_loc=True)
     else:
         [glider_alldatasets,
          glider_alldataset_times,
