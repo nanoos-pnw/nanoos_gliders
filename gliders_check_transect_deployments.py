@@ -42,6 +42,7 @@ def extract_latest_deployment(glider_id, glider_info, gliderplot_info, deploymen
     # Get latest deployment from glider info
     
     # Extract out the glider deployments for the given glider id
+
     glider_datasets = []
     for ii in range(0,len(glider_info['deployments'])):
         if glider_info['deployments'][ii]['glider_id'] == glider_id:
@@ -432,15 +433,15 @@ def update_inactive_gliders_jsons(transect_id, glider_id,
 def get_ooi_deploymentname(transect_id):
     
     if transect_id == 'ooi_ghs':
-        location_txt = '"Grays Harbor Shallow"'
+        location_txt = 'Grays Harbor Shallow'
     elif transect_id == 'ooi_ghd':
-        location_txt = '"Grays Harbor Deep"'
+        location_txt = 'Grays Harbor Deep'
     elif transect_id == 'ooi_ns':
-        location_txt = '"Newport Hydrographic Shallow"'
+        location_txt = 'Newport Hydrographic Shallow'
     elif transect_id == 'ooi_nd':
-        location_txt = '"Newport Hydrographic Deep"'
+        location_txt = 'Newport Hydrographic Deep'
     elif transect_id == 'ooi_coosbay':
-        location_txt = '"Coos Bay"'
+        location_txt = 'Coos Bay'
         
     else:
         print('Valid transects include: ')

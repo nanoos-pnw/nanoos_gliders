@@ -215,6 +215,8 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
         "cdm_data_type": "trajectoryprofile"
     }
     search_for_text = loc_text
+    if ooi_loc:
+        search_for_text = '"' + search_for_text + '"'
     search_url  = e.get_search_url(search_for=search_for_text, response='csv', **kw)
     search_info = pd.read_csv(search_url)
     if ooi_loc:
@@ -235,16 +237,20 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
         # Keep this as a list so indexing is by dataset, not by character.
         all_dataset_info = search_info['Info'].tolist()
         keeplines = [False for ii in range(0,len(all_dataset_info))]
-        
+
+        line_name = loc_text        
         for ii in range(0,len(all_dataset_info)):
             dataset_info = pd.read_csv(all_dataset_info[ii])
-            try:
-                hydroline_ind = np.where(dataset_info['Attribute Name'] == 'hydrographic_line')[0][0]
-                hydroline_name = dataset_info.iloc[hydroline_ind]['Value']
-
-                if hydroline_name == search_for_text:
+            if any([att_name == 'hydrographic_line' for att_name in dataset_info['Attribute Name']]):
+                hydroline_ind = np.where([att_name == 'hydrographic_line' for att_name in dataset_info['Attribute Name']])[0][0]
+                hydroline_names = dataset_info.iloc[hydroline_ind]['Value']
+                if ',' in hydroline_names:
+                    hydroline_names = [ii.strip() for ii in hydroline_names.split(',')]
+                else:
+                    hydroline_names = [hydroline_names.strip()]
+                if line_name in hydroline_names:
                     keeplines[ii] = True
-            except:
+            else:
                 print('      No "hydrographic_line" available for:',all_dataset_ids[ii])
                 
         if any(keeplines):

@@ -124,6 +124,9 @@ python gliders_main.py -t washelf --plots
 
 # Plots for a single deployment
 python gliders_main.py -t washelf --plots -d 2024_Jan_Ongoing
+
+# Rebuild deployment sections by recalculating turning points
+python gliders_main.py -t washelf --plots --rebuild
 ```
 
 ## API Reference
