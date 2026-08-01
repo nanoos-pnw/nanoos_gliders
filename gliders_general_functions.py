@@ -518,12 +518,12 @@ def set_deployment_dataset_parameters(glider_id, dataset_id,
     deployment_dataset['glider_id'] = glider_id
 
     deployment_dataset['datetime_start'] = dataset_info['time_coverage_start']
+    deployment_dataset['datetime_end'] = dataset_info['time_coverage_end']
     starttime = datetime.datetime.strptime(dataset_info['time_coverage_start'], '%Y-%m-%dT%H:%M:%SZ')
     endtime = datetime.datetime.strptime(dataset_info['time_coverage_end'], '%Y-%m-%dT%H:%M:%SZ')
     if 'delayed' not in dataset_id:
         deployment_dataset['deployment_id'] = starttime.strftime('%Y_%b') + '_Ongoing'
         deployment_dataset['deployment_label'] = starttime.strftime('%Y %B') + ' - Ongoing'
-        deployment_dataset['datetime_end'] = None
         deployment_dataset['deployment_active'] = True
     else:
         if (starttime.year == endtime.year) and (starttime.month == endtime.month):
@@ -532,7 +532,6 @@ def set_deployment_dataset_parameters(glider_id, dataset_id,
         else:
             deployment_dataset['deployment_id']= starttime.strftime('%Y_%b') + '_' + endtime.strftime('%Y_%b')
             deployment_dataset['deployment_label']=starttime.strftime('%Y %B') + ' - ' + endtime.strftime('%Y %B')
-        deployment_dataset['datetime_end'] = dataset_info['time_coverage_end']
         deployment_dataset['deployment_active'] = False
 
 

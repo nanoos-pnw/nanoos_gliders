@@ -577,8 +577,6 @@ def check_transect_deployments(transect_id):
 
         # Extract out the existing dataset IDs and start dates
         glider_datasets = []
-        dataset_ids = []
-        dataset_enddates = []
         for ii in range(0,len(glider_info['deployments'])):
             
             # Look through each deployment for a given glider,
@@ -586,18 +584,20 @@ def check_transect_deployments(transect_id):
             # to check, as well as the start and end dates of the deploymnet
             if ((glider_info['deployments'][ii]['glider_id'] == glider_id)
                 and
-                glider_info['deployments'][ii]['deployment_active']):                
+                glider_info['deployments'][ii]['deployment_active']):      
+
+                          
                 glider_datasets.append(glider_info['deployments'][ii])
                 
-            # Extract our the relevant field from the identified glider datasets
-            dataset_ids = [glider_datasets[ii]['dataset_id'] 
-                           for ii in range(0,len(glider_datasets))]
-            dataset_startdates = [datetime.datetime.strptime(glider_datasets[ii]['start_time'],
-                                                             '%Y-%m-%dT%H:%M:%SZ') 
-                                  for ii in range(0,len(glider_datasets))]
-            dataset_enddates = [datetime.datetime.strptime(glider_datasets[ii]['end_time'],
-                                                           '%Y-%m-%dT%H:%M:%SZ') 
+        # Extract our the relevant field from the identified glider datasets
+        dataset_ids = [glider_datasets[ii]['dataset_id'] 
+                        for ii in range(0,len(glider_datasets))]
+        dataset_startdates = [datetime.datetime.strptime(glider_datasets[ii]['start_time'],
+                                                            '%Y-%m-%dT%H:%M:%SZ') 
                                 for ii in range(0,len(glider_datasets))]
+        dataset_enddates = [datetime.datetime.strptime(glider_datasets[ii]['end_time'],
+                                                        '%Y-%m-%dT%H:%M:%SZ') 
+                            for ii in range(0,len(glider_datasets))]
 
         # After a list of active deployments has been made, compare the glider info
         # end date to the erddap metadata end date, and if their metadata end date
