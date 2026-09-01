@@ -140,6 +140,11 @@ def extract_position_variables(df, dep_plotinfo):
     alat = df['latitude'].values # average lat per dive
     plon = df['precise_lon'].values # precise lon
     alon = df['longitude'].values # average lon per dive
+    if all(np.isnan(plat)) or all(np.isnan(plon)):
+        print('   No precise lat/lon coordinates available')
+        print('   Using average lat/lon coordinates instead')
+        plat = alat.copy()
+        plon = alon.copy()
     data_coords = {'divenum': divenum,
                    'depth': depth,
                    'plat': plat, 
