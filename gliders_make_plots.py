@@ -1234,15 +1234,62 @@ def make_section_plots(outputpath, transect_id, transect_label, dep_plotinfo,
         
         upperzlims = [ii for ii in depthlims[:-1]]
         lowerzlims = [ii for ii in depthlims[1:]]
-        
+
+        precise_coords = True
+        if (all(np.isnan(data_coords['plon'][section_start:section_end+1])) or 
+            all(np.isnan(data_coords['plat'][section_start:section_end+1]))):
+            print('\t\tNo precise coordinates for section ' + 
+                  section_id + '; using approximate coordinates instead.')
+            precise_coords = False
+        elif any(np.isnan(var)):
+            validinds = np.where(~np.isnan(var))[0]
+            if len(validinds) == 0:
+                print('\t\tNo data present for variable ' + varid + ' in section ' +
+                      section_id + '; skipping JSON creation.')
+                return
+            else:
+                xvar = data_coords['plon'][section_start:section_end+1][validinds]
+                yvar = data_coords['plat'][section_start:section_end+1][validinds]
+                if all(np.isnan(xvar)) or all(np.isnan(yvar)):
+                    print('\t\tNo precise coordinates for section ' + 
+                          section_id + '; using approximate coordinates instead.')
+                    precise_coords = False
+
         if section_orientation == 'longitudinal':
-            xvar = data_coords['plon'][section_start:section_end+1]
+            if precise_coords:
+                xvar = data_coords['plon'][section_start:section_end+1]
+            else:
+                xvar = data_coords['alon'][section_start:section_end+1]
         elif section_orientation == 'latitudinal':
-            xvar = data_coords['plat'][section_start:section_end+1]
+            if precise_coords:
+                xvar = data_coords['plat'][section_start:section_end+1]
+            else:
+                xvar = data_coords['alat'][section_start:section_end+1]
         else:
             print('Invalid section orientation. Check value, and replot.')
             return
         zvar = data_coords['depth'][section_start:section_end+1]
+
+        xstart = xvar[0]
+        xend = xvar[-1]
+        zstart = zvar[0]
+        zend = zvar[-1]
+        if precise_coords:
+            tstart = data_coords['ptime'][section_start]
+            tend = data_coords['ptime'][section_end]
+        else:
+            tstart = data_coords['atime'][section_start]
+            tend = data_coords['atime'][section_end]
+        try:
+            tstart = tstart.to_pydatetime()
+            tend = tend.to_pydatetime()
+        except:
+            if precise_coords:
+                tstart = datetime.datetime.strptime(tstart, '%Y-%m-%d %H:%M:%S+00:00')
+                tend = datetime.datetime.strptime(tend, '%Y-%m-%d %H:%M:%S+00:00')
+            else:
+                tstart = datetime.datetime.strptime(tstart, '%Y-%m-%dT%H:%M:%SZ')
+                tend = datetime.datetime.strptime(tend, '%Y-%m-%dT%H:%M:%SZ')
         
             
         # make and save scientific plots
@@ -1285,48 +1332,48 @@ def make_section_plots(outputpath, transect_id, transect_label, dep_plotinfo,
             plot_fontSize=14
             if zz == len(upperzlims)-1:
                 if section_orientation == 'longitudinal':
-                    if abs(data_coords['plon'][section_start]) > abs(data_coords['plon'][section_end]): 
+                    if abs(xstart) > abs(xend): 
                         # moving offshore to onshore
                         ax.text(dep_plotinfo['lonlimtransect'][0]+0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_start].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tstart.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='left', ha='left')
                         ax.text(dep_plotinfo['lonlimtransect'][1]-0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_end].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tend.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='right', ha='right')
 
                     else: 
                         # moving onshore to offshore
                         ax.text(dep_plotinfo['lonlimtransect'][0]+0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_end].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tend.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='left', ha='left')
                         ax.text(dep_plotinfo['lonlimtransect'][1]-0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_start].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tstart.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='right', ha='right')
                 else:
                     if abs(data_coords['plat'][section_start]) < abs(data_coords['plat'][section_end]): 
                         # moving offshore to onshore
                         ax.text(dep_plotinfo['latlimtransect'][0]+0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_start].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tstart.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='left', ha='left')
                         ax.text(dep_plotinfo['latlimtransect'][1]-0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_end].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tend.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='right', ha='right')
 
                     else: 
                         # moving onshore to offshore
                         ax.text(dep_plotinfo['latlimtransect'][0]+0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_end].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tend.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='left', ha='left')
                         ax.text(dep_plotinfo['latlimtransect'][1]-0.01, 
                                 lowerzlim-5, 
-                                data_coords['ptime'][section_start].strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
+                                tstart.strftime('%Y-%m-%d\n%H:%M:%S UTC'), 
                                 fontsize=plot_fontSize, fontdict=None, ma='right', ha='right')
 
             # labels, legends, colorbars
@@ -1409,8 +1456,30 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     datavar = np.array(datadict[varid])
     section_start = data_coords['endpts'][section_ind]
     section_end = data_coords['endpts'][section_ind+1]
-    xvar = data_coords['plon'][section_start:section_end+1]
-    yvar = data_coords['plat'][section_start:section_end+1]
+    precise_coords = True
+    if (all(np.isnan(data_coords['plon'][section_start:section_end+1])) or 
+        all(np.isnan(data_coords['plat'][section_start:section_end+1]))):
+        print('\t\tNo precise coordinates for section ' + data_coords['section_id'][section_ind] + '; using approximate coordinates instead.')
+        precise_coords = False
+    elif any(np.isnan(datavar)):
+        validinds = np.where(~np.isnan(datavar))[0]
+        if len(validinds) == 0:
+            print('\t\tNo data present for variable ' + varid + ' in section ' +
+                  data_coords['section_id'][section_ind] + '; skipping JSON creation.')
+            return
+        else:
+            xvar = data_coords['plon'][section_start:section_end+1][validinds]
+            yvar = data_coords['plat'][section_start:section_end+1][validinds]
+            if all(np.isnan(xvar)) or all(np.isnan(yvar)):
+                print('\t\tNo precise coordinates for section ' + 
+                      data_coords['section_id'][section_ind] + '; using approximate coordinates instead.')
+                precise_coords = False
+    if precise_coords:
+        xvar = data_coords['plon'][section_start:section_end+1]
+        yvar = data_coords['plat'][section_start:section_end+1]
+    else:
+        xvar = data_coords['alon'][section_start:section_end+1]
+        yvar = data_coords['alat'][section_start:section_end+1]
     zvar = data_coords['depth'][section_start:section_end+1]
     section_time = data_coords['atime'][section_start:section_end+1]
     bathyvar = data_coords['gliderdepths'][section_start:section_end+1]
@@ -1421,7 +1490,6 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
         print('\t\tNo data present for variable ' + varid + ' in section ' +
                   data_coords['section_id'][section_ind] + '; skipping JSON creation.')
         return
-        #datavar = np.nan*np.zeros(len(xvar))
     
     # Remove any NaN values from the data
     if any(np.isnan(datavar)):
