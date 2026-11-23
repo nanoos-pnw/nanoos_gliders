@@ -159,7 +159,7 @@ def get_outputpath():
 # %%
 
 
-def find_glider_datasets(glider_id, ooi_loc=None):
+def find_glider_datasets(glider_id, ooi_loc=False, cproof_loc=False):
     
     ############################################
     # Connect to the ERDDAP server
@@ -170,6 +170,23 @@ def find_glider_datasets(glider_id, ooi_loc=None):
     }
     search_url  = e.get_search_url(response='csv', **kw)
     search_info = pd.read_csv(search_url)
+    if ooi_loc or cproof_loc:
+        search_for_text = '"' + search_for_text + '"'
+
+    if ooi_loc:
+        search_for_ooi_text = '"OOI Coastal Endurance"'
+        search_ooi_url  = e.get_search_url(search_for=search_for_ooi_text, response='csv', **kw)
+        search_info_ooi = pd.read_csv(search_ooi_url)
+
+        matches = search_info_ooi.merge(search_info, how='inner')
+        search_info = matches.copy()
+    elif cproof_loc:
+        search_for_cproof_text = '"C-PROOF"'
+        search_cproof_url  = e.get_search_url(search_for=search_for_cproof_text, response='csv', **kw)
+        search_info_cproof = pd.read_csv(search_cproof_url)
+
+        matches = search_info_cproof.merge(search_info, how='inner')
+        search_info = matches.copy()
 
     # Keep this as a list so a single search result does not become a scalar string.
     all_dataset_ids = search_info['Dataset ID'].tolist()
@@ -191,6 +208,7 @@ def find_glider_datasets(glider_id, ooi_loc=None):
     # Get the dataset date
     glider_dataset_dates = []
     for glider_dataset in glider_dataset_ids:
+        print('Check glider id: ' + glider_id + ' in dataset: ' + glider_dataset)
         if '-delayed' in glider_dataset:
             dataset_date = datetime.datetime.strptime(glider_dataset[len(glider_id)+1:glider_dataset.find('-delayed')],
                                                       '%Y%m%dT%H%M')
@@ -205,7 +223,7 @@ def find_glider_datasets(glider_id, ooi_loc=None):
 # %%
 
 
-def find_location_glider_ids(loc_text, ooi_loc=False):
+def find_location_glider_ids(loc_text, ooi_loc=False, cproof_loc=False):
     
     ############################################
     # Connect to the ERDDAP server
@@ -215,16 +233,25 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
         "cdm_data_type": "trajectoryprofile"
     }
     search_for_text = loc_text
-    if ooi_loc:
+    if ooi_loc or cproof_loc:
         search_for_text = '"' + search_for_text + '"'
+
     search_url  = e.get_search_url(search_for=search_for_text, response='csv', **kw)
     search_info = pd.read_csv(search_url)
+
     if ooi_loc:
         search_for_ooi_text = '"OOI Coastal Endurance"'
         search_ooi_url  = e.get_search_url(search_for=search_for_ooi_text, response='csv', **kw)
         search_info_ooi = pd.read_csv(search_ooi_url)
 
         matches = search_info_ooi.merge(search_info, how='inner')
+        search_info = matches.copy()
+    elif cproof_loc:
+        search_for_cproof_text = '"C-PROOF"'
+        search_cproof_url  = e.get_search_url(search_for=search_for_cproof_text, response='csv', **kw)
+        search_info_cproof = pd.read_csv(search_cproof_url)
+
+        matches = search_info_cproof.merge(search_info, how='inner')
         search_info = matches.copy()
 
     # Keep this as a list so a single search result does not become a scalar string.
@@ -257,6 +284,30 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
             all_dataset_ids = [all_dataset_ids[ii] for ii in np.where(keeplines)[0]]
         else:
             all_dataset_ids = []
+    elif cproof_loc:
+        # Keep this as a list so indexing is by dataset, not by character.
+        all_dataset_info = search_info['Info'].tolist()
+        keeplines = [False for ii in range(0,len(all_dataset_info))]
+
+        line_name = loc_text        
+        for ii in range(0,len(all_dataset_info)):
+            dataset_info = pd.read_csv(all_dataset_info[ii])
+            if any([att_name == 'project' for att_name in dataset_info['Attribute Name']]):
+                project_ind = np.where([att_name == 'project' for att_name in dataset_info['Attribute Name']])[0][0]
+                project_names = dataset_info.iloc[project_ind]['Value']
+                if ',' in project_names:
+                    project_names = [ii.strip() for ii in project_names.split(',')]
+                else:
+                    project_names = [project_names.strip()]
+                if line_name in project_names:
+                    keeplines[ii] = True
+            else:
+                print('      No "project" available for:',all_dataset_ids[ii])
+                
+        if any(keeplines):
+            all_dataset_ids = [all_dataset_ids[ii] for ii in np.where(keeplines)[0]]
+        else:
+            all_dataset_ids = []
                 
     
     
@@ -276,10 +327,10 @@ def find_location_glider_ids(loc_text, ooi_loc=False):
     glider_dataset_dates = []
     for glider_dataset in glider_dataset_ids:
         if '-delayed' in glider_dataset:
-            dataset_date = datetime.datetime.strptime(glider_dataset[glider_dataset.find('-')+1:glider_dataset.find('-delayed')],
+            dataset_date = datetime.datetime.strptime(glider_dataset[glider_dataset.rfind('-')+1:glider_dataset.find('-delayed')],
                                                       '%Y%m%dT%H%M')
         else:
-            dataset_date = datetime.datetime.strptime(glider_dataset[glider_dataset.find('-')+1:],
+            dataset_date = datetime.datetime.strptime(glider_dataset[glider_dataset.rfind('-')+1:],
                                                       '%Y%m%dT%H%M')
         glider_dataset_dates.append(dataset_date)
         

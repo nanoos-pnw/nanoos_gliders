@@ -2078,7 +2078,8 @@ def main():
     # If the transect name was given, ensure that the transect name is in lowercase,
     # and that it matches one of the valid transect names
     valid_transects = ['lapush', 'osu_trinidad1', 'washelf', 
-                       'ooi_ghs', 'ooi_ghd', 'ooi_nd', 'ooi_ns', 'ooi_coosbay']    
+                       'ooi_ghs', 'ooi_ghd', 'ooi_nd', 'ooi_ns', 'ooi_coosbay',
+                       'cproof_southern']    
     def list_valid_transects():
         print('Valid transects include: ')
         print('"lapush" - NANOOS glider off of LaPush, Washington')
@@ -2089,6 +2090,7 @@ def main():
         print('"ooi_ns" - OOI shallow glider at Newport, Oregon')
         print('"ooi_nd" - OOI deep glider at Newport, Oregon')
         print('"ooi_coosbay" - OOI glider at Coos Bay, Oregon')
+        print('"cproof_southern" - C-PROOF glider - Southern Line')
         
         return        
     

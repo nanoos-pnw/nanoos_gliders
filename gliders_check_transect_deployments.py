@@ -44,6 +44,10 @@ def extract_latest_deployment(glider_id, glider_info, gliderplot_info, deploymen
     # Extract out the glider deployments for the given glider id
 
     glider_datasets = []
+    if len(glider_info['deployments']) == 0:
+        print('No deployments found for glider:',glider_id)
+        return None, None
+    
     for ii in range(0,len(glider_info['deployments'])):
         if glider_info['deployments'][ii]['glider_id'] == glider_id:
             glider_datasets.append(glider_info['deployments'][ii])
@@ -264,7 +268,11 @@ def find_datasets_to_make(glider_id, glider_info,
             datasets_to_make_times.append(glider_alldataset_times[ii])
             datasets_to_make_delayed.append(glider_alldataset_delayed[ii])
         
-    datasets_to_make = sorted(datasets_to_make)
+    idx = sorted(range(len(datasets_to_make)), key=lambda ii: datasets_to_make[ii])
+    datasets_to_make = [datasets_to_make[ii] for ii in idx]
+    datasets_to_make_times = [datasets_to_make_times[ii] for ii in idx]
+    datasets_to_make_delayed = [datasets_to_make_delayed[ii] for ii in idx]
+
     
     
     return datasets_to_make, datasets_to_make_times, datasets_to_make_delayed
@@ -454,6 +462,18 @@ def get_ooi_deploymentname(transect_id):
         
     return location_txt
 
+def get_cproof_deploymentname(transect_id):
+    
+    if transect_id == 'cproof_southern':
+        location_txt = 'Southern Line'
+        
+    else:
+        print('Valid transects include: ')
+        print('"cproof_southern" - C-PROOF southern line glider')
+        location_txt = None
+        
+    return location_txt
+
 
 # In[ ]:
 
@@ -480,7 +500,8 @@ def check_transect_deployments(transect_id):
     # Extract out the glider IDs, and find the unique glider IDs
     if 'ooi' in transect_id:
         glider_ids = [get_ooi_deploymentname(transect_id)]
-        
+    elif 'cproof' in transect_id:
+        glider_ids = [get_cproof_deploymentname(transect_id)]
     else:
         glider_ids = []
         for ii in range(0,len(glider_info['deployments'])):
@@ -507,6 +528,12 @@ def check_transect_deployments(transect_id):
             [glider_alldatasets,
              glider_alldataset_times,
              glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(loc_text, ooi_loc=True)
+        elif 'cproof' in transect_id:
+            print('      C-PROOF Transect: Look for gliders by transect label.')
+            loc_text = get_cproof_deploymentname(transect_id)
+            [glider_alldatasets,
+             glider_alldataset_times,
+             glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(loc_text, cproof_loc=True)
         else:
             [glider_alldatasets,
              glider_alldataset_times,
@@ -563,17 +590,6 @@ def check_transect_deployments(transect_id):
     # ending date of the data
     for glider_id in glider_ids:
         print('   Checking deployments to update latest time for glider:',glider_id)
-        
-        ## Get a list of all datasets for a given
-        ## glider on the Glider ERDDAP
-        #if 'ooi' in transect_id:
-        #    [glider_alldatasets,
-        #     glider_alldataset_times,
-        #     glider_alldataset_delayed] = gliders_gen.find_location_glider_ids(glider_id)
-        #else:
-        #    [glider_alldatasets,
-        #     glider_alldataset_times,
-        #     glider_alldataset_delayed] = gliders_gen.find_glider_datasets(glider_id)
 
         # Extract out the existing dataset IDs and start dates
         glider_datasets = []
@@ -628,8 +644,8 @@ def check_transect_deployments(transect_id):
     # any additional deployments that exist
     # for a given glider after the dataset.
     
-    if 'ooi' in transect_id:  
-        print('   Checking OOI deployments to ensure no later glider deployments')      
+    if (('ooi' in transect_id) or ('cproof' in transect_id)):  
+        print('   Checking OOI/C-PROOF deployments to ensure no later glider deployments')
         glider_active_datasets = []
         glider_active_dataset_ids = []
         glider_active_inds = []
@@ -641,7 +657,13 @@ def check_transect_deployments(transect_id):
                 glider_active_inds.append(ii)
                 glider_active_enddates.append(datetime.datetime.strptime(glider_info['deployments'][ii]['end_time'],
                                                                    '%Y-%m-%dT%H:%M:%SZ'))
-        glider_active_ids = [ii[:ii.find('-')] for ii in glider_active_dataset_ids]
+        if ('cproof' in transect_id):
+            glider_active_ids = [ii[ii.find('-'):ii.rfind('-')-1] for ii in glider_active_dataset_ids]
+        else:
+            glider_active_ids = [ii[:ii.find('-')] for ii in glider_active_dataset_ids]
+
+        print(glider_active_dataset_ids) 
+        print(glider_active_ids)
 
 
         # After a list of active deployments has been made, 
@@ -653,6 +675,7 @@ def check_transect_deployments(transect_id):
         for ind in range(0,len(glider_active_inds)):
 
             glider_id = glider_active_ids[ind]
+            print('      Checking for later deployments for glider:',glider_id)
 
             # Get a list of all datasets for a given
             # glider on the Glider ERDDAP
@@ -805,9 +828,11 @@ def main():
     # If the buoy designation was given, ensure that the buoy designation is in uppercase,
     # and that it matches one of the valid buoy designations
     valid_transects = ['washelf', 'LaPush', 'OSU_Trinidad1', 
-                       'ooi_ns', 'ooi_nd', 'ooi_ghs', 'ooi_ghd', 'ooi_coosbay']
+                       'ooi_ns', 'ooi_nd', 'ooi_ghs', 'ooi_ghd', 'ooi_coosbay',
+                       'cproof_southern']
     check_transects = ['washelf', 'lapush', 'osu_trinidad1', 
-                       'ooi_ns', 'ooi_nd', 'ooi_ghs', 'ooi_ghd', 'ooi_coosbay']
+                       'ooi_ns', 'ooi_nd', 'ooi_ghs', 'ooi_ghd', 'ooi_coosbay',
+                       'cproof_southern']
     if transectFlag:
         transectId = transectId.lower()
         if transectId in check_transects:
