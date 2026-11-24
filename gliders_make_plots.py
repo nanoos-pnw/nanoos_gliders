@@ -1603,11 +1603,16 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
     for dd in range(0,len(unique_dives)):
         dive = unique_dives[dd]
         dive_inds = np.where(divenums == dive)[0]
-        # Add the bathymetry data for each dive
+        # Add the bathymetry data for each dive.
+        # If no bathymetry is available (e.g., outside the GEBCO grid),
+        # use a default depth of 3000 m.
+        bathy_depth = -np.round(bathyvar[dive_inds[0]],2)
+        if bathy_depth is None or np.isnan(bathy_depth):
+            bathy_depth = 3000.0
         section_data["bathymetry"].append({
             "lat": np.round(yvar[dive_inds[0]],6),
             "lon": np.round(xvar[dive_inds[0]],6),
-            'depth': -np.round(bathyvar[dive_inds[0]],2)          
+            'depth': bathy_depth
             }
         )
 
