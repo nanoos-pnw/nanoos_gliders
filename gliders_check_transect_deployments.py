@@ -128,7 +128,8 @@ def check_glider_deployment_order(transect_id):
     sortinds = np.argsort(startimes)
     gl_deploy_sorted = []
     for ii in range(0,len(sortinds)):
-        if (sortinds[ii] < len(sortinds)-1) and ('Ongoing' in gl_deploy[sortinds[ii]]['id']):
+        # Only the most recent deployment (last in sorted order) may keep the 'Ongoing' label
+        if (ii < len(sortinds)-1) and ('Ongoing' in gl_deploy[sortinds[ii]]['id']):
             
             print('Updating glider deployment labels for: ' + gl_deploy[sortinds[ii]]['id'])
             deployment_id, deployment_label = gliders_gen.set_dataset_id_label(gl_deploy[sortinds[ii]]['glider_id'], 
@@ -658,12 +659,13 @@ def check_transect_deployments(transect_id):
                 glider_active_enddates.append(datetime.datetime.strptime(glider_info['deployments'][ii]['end_time'],
                                                                    '%Y-%m-%dT%H:%M:%SZ'))
         if ('cproof' in transect_id):
-            glider_active_ids = [ii[ii.find('-'):ii.rfind('-')-1] for ii in glider_active_dataset_ids]
+            # C-PROOF dataset IDs look like 'dfo-marvin1003-20260119T0000[-delayed]';
+            # the glider ID is everything before the final date field ('dfo-marvin1003')
+            glider_active_ids = [ii.replace('-delayed', '')[:ii.replace('-delayed', '').rfind('-')]
+                                 for ii in glider_active_dataset_ids]
         else:
             glider_active_ids = [ii[:ii.find('-')] for ii in glider_active_dataset_ids]
 
-        print(glider_active_dataset_ids) 
-        print(glider_active_ids)
 
 
         # After a list of active deployments has been made, 

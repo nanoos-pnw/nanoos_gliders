@@ -170,8 +170,6 @@ def find_glider_datasets(glider_id, ooi_loc=False, cproof_loc=False):
     }
     search_url  = e.get_search_url(response='csv', **kw)
     search_info = pd.read_csv(search_url)
-    if ooi_loc or cproof_loc:
-        search_for_text = '"' + search_for_text + '"'
 
     if ooi_loc:
         search_for_ooi_text = '"OOI Coastal Endurance"'
@@ -326,12 +324,11 @@ def find_location_glider_ids(loc_text, ooi_loc=False, cproof_loc=False):
     # Get the dataset date
     glider_dataset_dates = []
     for glider_dataset in glider_dataset_ids:
-        if '-delayed' in glider_dataset:
-            dataset_date = datetime.datetime.strptime(glider_dataset[glider_dataset.rfind('-')+1:glider_dataset.find('-delayed')],
-                                                      '%Y%m%dT%H%M')
-        else:
-            dataset_date = datetime.datetime.strptime(glider_dataset[glider_dataset.rfind('-')+1:],
-                                                      '%Y%m%dT%H%M')
+        # Strip any '-delayed' suffix so the date is always the last '-' field
+        # (e.g., 'dfo-marvin1003-20260119T0000-delayed' -> '20260119T0000')
+        dataset_name = glider_dataset.replace('-delayed', '')
+        dataset_date = datetime.datetime.strptime(dataset_name[dataset_name.rfind('-')+1:],
+                                                  '%Y%m%dT%H%M')
         glider_dataset_dates.append(dataset_date)
         
     
