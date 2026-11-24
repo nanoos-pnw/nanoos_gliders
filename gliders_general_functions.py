@@ -476,8 +476,14 @@ def load_erddap_gliderdata(dataset_id, datetime_start, datetime_end, dac_vars):
     df = df.rename(columns=df_renamecols)
     
     # Sort the data to ensure that it is in sequential order
-    df = df.sort_index()
-    
+    # (stable sort, so rows sharing a timestamp keep a consistent order)
+    df = df.sort_index(kind='stable')
+
+    # Drop repeated precise_time rows. Some providers (e.g., C-PROOF) list each
+    # sample under two adjacent profiles; keeping both makes the section
+    # downloads disagree with the positional download by a point.
+    df = df[~df.index.duplicated(keep='first')]
+
     return df
 
 
@@ -588,8 +594,13 @@ def set_deployment_dataset_parameters(glider_id, dataset_id,
     deployment_dataset['lonlimmap'] = [np.floor(10*(float(dataset_info['geospatial_lon_min']) - 0.25))/10,
                                        np.ceil(10*(float(dataset_info['geospatial_lon_max']) + 0.25))/10]
     deployment_dataset['lonlimtransect'] = deployment_dataset['lonlimmap']
-    deployment_dataset['depthlimtransect']=[0,
-                                            np.ceil(0.1*(float(dataset_info['geospatial_lon_max']) + 5))/0.1]
+    # Depth limit: deepest point of the dataset, shifted down 5 m and rounded up
+    # to the nearest 10 m (e.g., 178 m -> 190 m; 173 m -> 180 m)
+    if 'geospatial_vertical_max' in dataset_info:
+        deployment_dataset['depthlimtransect'] = [0,
+                                                  float(np.ceil(0.1*(float(dataset_info['geospatial_vertical_max']) + 5))/0.1)]
+    else:
+        deployment_dataset['depthlimtransect'] = [0, 200]
 
 
     defaultdac_axisvars = ['precise_time','time',
@@ -611,8 +622,9 @@ def set_deployment_dataset_parameters(glider_id, dataset_id,
     deployment_dataset['variables_label'] = dac_varlabel
     deployment_dataset['variables_id'] = dac_varid
     deployment_dataset['variables_units'] = dac_varunits
-    deployment_dataset['variables_limits'] = [[6.0,12.0],[29.0,34.0],[1023.0,1027.0],
-                                              [0.0,11.0],[0.0,30.0],[0.0,3.0],[0.0,0.02]]
+    default_limits = {'temp': [6.0,12.0], 'sal': [29.0,34.0], 'dens': [1023.0,1027.0],
+                      'do': [0.0,11.0], 'chl': [0.0,30.0], 'cdom': [0.0,3.0], 'bs': [0.0,0.02]}
+    deployment_dataset['variables_limits'] = [default_limits[varid] for varid in dac_varid]
 
     
     # 
@@ -793,7 +805,7 @@ def check_default_variable_names(variable_names):
             varid.append('chl')
             varunits.append('ug/l')
             
-        elif var.lower() in ['backscatter']:
+        elif var.lower() in ['backscatter', 'backscatter_700']:
             vars_to_get.append(var)
             varlabel.append('Backscatter')
             varid.append('bs')
@@ -805,7 +817,7 @@ def check_default_variable_names(variable_names):
             varid.append('cdom')
             varunits.append('ppb')
             
-        elif var.lower() in ['dissolved_oxygen']:
+        elif var.lower() in ['dissolved_oxygen', 'oxygen_concentration']:
             vars_to_get.append(var)
             varlabel.append('Dissolved Oxygen')
             varid.append('do')
@@ -828,7 +840,17 @@ def check_default_variable_names(variable_names):
             varlabel.append('Density')
             varid.append('dens')
             varunits.append('kg/m3')
-        
+
+    # Return the variables in the standard order (temp, sal, dens, do, chl, cdom, bs),
+    # so they line up with the default 'variables_limits' list, regardless of the
+    # order in which ERDDAP lists the dataset variables
+    standard_order = ['temp', 'sal', 'dens', 'do', 'chl', 'cdom', 'bs']
+    sortinds = sorted(range(len(varid)), key=lambda ii: standard_order.index(varid[ii]))
+    vars_to_get = [vars_to_get[ii] for ii in sortinds]
+    varlabel = [varlabel[ii] for ii in sortinds]
+    varid = [varid[ii] for ii in sortinds]
+    varunits = [varunits[ii] for ii in sortinds]
+
     return vars_to_get, varlabel, varid, varunits
 
 

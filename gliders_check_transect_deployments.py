@@ -365,6 +365,19 @@ def update_glider_dataset_jsons(transect_id, glider_id,
                                           plot_params=last_plotdeployment,
                                           verified=False)
 
+            # For the first deployment on a transect there is no prior deployment
+            # to copy plot settings from, so add_deployment falls back to WA-shelf
+            # defaults. Replace the map/transect limits with this dataset's extent.
+            if last_plotdeployment is None:
+                for new_plotdeployment in gliderplot_obj.deployments:
+                    if new_plotdeployment['id'] == dataset_params['deployment_id']:
+                        for key in ['latlimmap', 'lonlimmap', 'lonlimtransect', 'depthlimtransect']:
+                            new_plotdeployment[key] = [float(val) for val in dataset_params[key]]
+                        # Also use the variable names actually present in this dataset
+                        for key in ['dac_variables', 'variables_label', 'variables_id',
+                                    'variables_units', 'variables_limits']:
+                            new_plotdeployment[key] = dataset_params[key]
+
 
 # In[ ]:
 
