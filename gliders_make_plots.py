@@ -1491,16 +1491,18 @@ def make_section_data_json(outputpath, transect_id, dep_plotinfo,
                   data_coords['section_id'][section_ind] + '; skipping JSON creation.')
         return
     
-    # Remove any NaN values from the data
-    if any(np.isnan(datavar)):
-        valid_inds = np.where(np.logical_and(np.logical_and(~np.isnan(datavar),
-                                                            ~np.isnan(zvar)),
-                                             np.logical_and(~np.isnan(xvar),
-                                                            ~np.isnan(yvar))))[0]
-        if len(valid_inds) == 0:
-            print('\t\tNo valid data for variable ' + varid + ' in section ' +
-                  data_coords['section_id'][section_ind] + '; skipping JSON creation.')
-            return
+    # Remove any points with a missing value, depth, lat, or lon.
+    # This is always applied, so that dives without a position are
+    # excluded from the json (including the first/last dive positions)
+    valid_inds = np.where(np.logical_and(np.logical_and(~np.isnan(datavar),
+                                                        ~np.isnan(zvar)),
+                                         np.logical_and(~np.isnan(xvar),
+                                                        ~np.isnan(yvar))))[0]
+    if len(valid_inds) == 0:
+        print('\t\tNo valid data for variable ' + varid + ' in section ' +
+              data_coords['section_id'][section_ind] + '; skipping JSON creation.')
+        return
+    if len(valid_inds) < len(datavar):
         xvar = xvar[valid_inds]
         yvar = yvar[valid_inds]
         zvar = zvar[valid_inds]
